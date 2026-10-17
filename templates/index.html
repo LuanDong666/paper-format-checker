@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>论文/作业格式检查与修复系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            color: white;
+            padding: 30px 0 20px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 6px; }
+        .header p { font-size: 14px; opacity: 0.7; }
+
+        /* 主卡片 */
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 15px;
+            color: #888;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #4a6cf7;
+            border-bottom-color: #4a6cf7;
+            font-weight: 600;
+        }
+        .tab:hover { color: #4a6cf7; }
+
+        .tab-content { padding: 28px 32px; display: none; }
+        .tab-content.active { display: block; }
+
+        /* 格式模板选择 */
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .template-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .template-card:hover { border-color: #4a6cf7; background: #f5f7ff; }
+        .template-card.active {
+            border-color: #4a6cf7;
+            background: #eef1ff;
+        }
+        .template-card .t-icon { font-size: 24px; margin-bottom: 6px; }
+        .template-card .t-name { font-size: 13px; font-weight: 600; color: #333; }
+        .template-card .t-desc { font-size: 11px; color: #999; margin-top: 2px; }
+
+        /* 自定义配置 */
+        .custom-toggle {
+            font-size: 13px;
+            color: #4a6cf7;
+            cursor: pointer;
+            margin-bottom: 12px;
+            user-select: none;
+        }
+        .custom-panel {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .custom-panel.show { display: block; }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .config-item label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .config-item input, .config-item select {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 2px dashed #c0c8e0;
+            border-radius: 12px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafbff;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #4a6cf7;
+            background: #f0f3ff;
+        }
+        .upload-icon { font-size: 48px; margin-bottom: 12px; }
+        .upload-text { font-size: 15px; color: #333; margin-bottom: 4px; }
+        .upload-hint { font-size: 12px; color: #999; }
+
+        .file-info {
+            display: none;
+            background: #f0f3ff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 14px;
+            align-items: center;
+            gap: 12px;
+        }
+        .file-info.show { display: flex; }
+        .fix-consent { display: none; align-items: flex-start; gap: 9px; margin-top: 12px; padding: 11px 13px; border: 1px solid #c8ddf5; border-radius: 10px; background: #f5faff; color: #49627d; font-size: 12px; line-height: 1.55; cursor: pointer; }
+        .fix-consent.show { display: flex; }
+        .fix-consent input { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--blue); }
+        .file-icon { font-size: 28px; }
+        .file-details { flex: 1; }
+        .file-name { font-size: 14px; font-weight: 600; color: #333; word-break: break-all; }
+        .file-size { font-size: 12px; color: #999; margin-top: 2px; }
+        .remove-file {
+            background: none; border: none; color: #999;
+            font-size: 22px; cursor: pointer; padding: 4px 8px;
+        }
+        .remove-file:hover { color: #e74c3c; }
+
+        /* 按钮 */
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+        .btn {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4a6cf7, #6c5ce7);
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,108,247,0.4); }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover:not(:disabled) { background: #219a52; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 加载 */
+        .loading { display: none; text-align: center; padding: 24px; }
+        .loading.show { display: block; }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 4px solid #e8ecff;
+            border-top-color: #4a6cf7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 结果 */
+        .result-section { display: none; margin-top: 20px; }
+        .result-section.show { display: block; }
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .result-card {
+            text-align: center;
+            padding: 14px 8px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .result-card .num { font-size: 24px; font-weight: bold; }
+        .result-card .label { font-size: 11px; color: #888; margin-top: 4px; }
+        .result-card.total .num { color: #2c3e50; }
+        .result-card.error .num { color: #e74c3c; }
+        .result-card.warning .num { color: #f39c12; }
+        .result-card.info .num { color: #3498db; }
+        .result-card.fixable .num { color: #27ae60; }
+
+        .issue-list { max-height: 300px; overflow-y: auto; }
+        .issue-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .issue-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+        .badge {
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;
+        }
+        .badge.error { background: #fde8e8; color: #e74c3c; }
+        .badge.warning { background: #fef3e2; color: #f39c12; }
+        .badge.info { background: #e8f4fd; color: #3498db; }
+        .badge.fixable { background: #eafaf1; color: #27ae60; }
+        .issue-loc { font-size: 11px; color: #999; }
+        .issue-desc { color: #333; }
+        .issue-sug { color: #27ae60; font-size: 12px; margin-top: 2px; }
+
+        .link-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4a6cf7;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        /* 设置面板 */
+        .settings-section { margin-bottom: 20px; }
+        .settings-section h3 {
+            font-size: 15px; color: #333; margin-bottom: 12px;
+            padding-bottom: 8px; border-bottom: 1px solid #eee;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; font-size: 13px; color: #555; margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 9px 12px;
+            border: 1px solid #ddd; border-radius: 8px; font-size: 13px;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .hint { font-size: 11px; color: #999; margin-top: 4px; }
+        .api-status {
+            font-size: 12px; padding: 6px 10px; border-radius: 6px;
+            display: inline-block; margin-top: 6px;
+        }
+        .api-status.ok { background: #eafaf1; color: #27ae60; }
+        .api-status.no { background: #fde8e8; color: #e74c3c; }
+
+        /* 润色区域 */
+        .polish-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .polish-box textarea {
+            width: 100%; min-height: 160px;
+            padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 13px; resize: vertical;
+        }
+        .polish-box h4 { font-size: 13px; color: #555; margin-bottom: 6px; }
+
+        .error-msg {
+            display: none;
+            background: #fde8e8; color: #e74c3c;
+            padding: 10px 14px; border-radius: 8px;
+            margin-top: 12px; font-size: 13px;
+        }
+        .error-msg.show { display: block; }
+
+        .success-msg {
+            display: none;
+            background: #eafaf1; color: #27ae60;
+            padding: 10px 14px; border-radius: 8px;
+            margin-top: 12px; font-size: 13px;
+        }
+        .success-msg.show { display: block; }
+
+        /* 2026 refresh: calm academic workspace, rather than a generic dark dashboard */
+        :root {
+            --ink: #10233d;
+            --muted: #61728a;
+            --line: #dce6f0;
+            --surface: #ffffff;
+            --canvas: #f4f8fb;
+            --blue: #1769e0;
+            --blue-deep: #0c4fb5;
+            --teal: #0d9488;
+            --teal-soft: #e5f7f4;
+            --blue-soft: #edf5ff;
+            --amber-soft: #fff6df;
+            --danger-soft: #fff0f1;
+        }
+        body {
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 8% 0%, rgba(71, 175, 215, .20), transparent 28rem),
+                radial-gradient(circle at 92% 12%, rgba(13, 148, 136, .14), transparent 25rem),
+                var(--canvas);
+            padding: 32px 20px 56px;
+        }
+        .container { max-width: 1120px; }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            text-align: left;
+            color: var(--ink);
+            padding: 0 0 24px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-mark {
+            display: grid; place-items: center; width: 46px; height: 46px;
+            border-radius: 14px; color: white; font-size: 23px;
+            background: linear-gradient(135deg, var(--blue), #57a8f4);
+            box-shadow: 0 10px 22px rgba(23,105,224,.24);
+        }
+        .header h1 { font-size: clamp(23px, 3vw, 30px); letter-spacing: -.035em; margin: 0; }
+        .header p { color: var(--muted); opacity: 1; margin-top: 5px; }
+        .local-badge {
+            display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+            padding: 8px 12px; border: 1px solid #bde6de; border-radius: 999px;
+            background: #f1fbf9; color: #08796f; font-size: 12px; font-weight: 700;
+        }
+        .local-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #16a394; }
+        .main-card { border: 1px solid rgba(181,198,214,.72); border-radius: 22px; box-shadow: 0 18px 48px rgba(27,64,95,.10); overflow: hidden; }
+        .tabs { padding: 0 24px; gap: 8px; background: #fbfdff; border-bottom: 1px solid var(--line); }
+        .tab { flex: 0 0 auto; padding: 17px 15px 14px; color: var(--muted); font-size: 14px; border-width: 2px; }
+        .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+        .tab:hover { color: var(--blue); background: #f3f8ff; }
+        .workflow {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            margin: 22px 0 26px; padding: 13px; border: 1px solid var(--line);
+            border-radius: 14px; background: #fbfdff;
+        }
+        .workflow-step { display: flex; align-items: center; gap: 9px; padding: 6px 10px; color: var(--muted); font-size: 12px; }
+        .workflow-num { display:grid; place-items:center; flex: 0 0 auto; width: 22px; height:22px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font-weight: 800; }
+        .workflow-step strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 1px; }
+        .tab-content { padding: 30px 34px 36px; }
+        .section-title { font-size: 16px; color: var(--ink); margin-bottom: 13px; }
+        .section-title::after { content: ''; display: block; width: 28px; height: 3px; margin-top: 8px; border-radius: 3px; background: linear-gradient(90deg, var(--blue), #62b2f5); }
+        .template-grid { gap: 12px; margin-bottom: 24px; }
+        .template-card { position: relative; min-height: 112px; padding: 17px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 2px 5px rgba(33,65,94,.025); }
+        .template-card:hover { border-color: #8bbdf6; background: #f8fbff; box-shadow: 0 9px 22px rgba(41,95,158,.09); transform: translateY(-2px); }
+        .template-card.active { border-color: var(--blue); background: var(--blue-soft); box-shadow: inset 0 0 0 1px var(--blue); }
+        .template-card.active::before { content: '已选'; position: absolute; top: 9px; right: 9px; padding: 2px 6px; border-radius: 99px; background: var(--blue); color:#fff; font-size: 10px; font-weight:700; }
+        .template-card .t-icon { font-size: 25px; }
+        .template-card .t-name { color: var(--ink); font-size: 13px; }
+        .template-card .t-desc { line-height: 1.45; color: var(--muted); }
+        .requirement-card { border: 1px solid var(--line); border-radius: 14px; padding: 17px; margin-bottom: 18px; background: #fbfdff; }
+        .requirement-card .lead { color: var(--muted); font-size: 13px; line-height: 1.7; margin-bottom: 10px; }
+        textarea, .form-group input, .form-group select, .config-item input, .config-item select { border-color: #cbd9e6 !important; color: var(--ink); background: #fff; }
+        textarea:focus, input:focus, select:focus { outline: 3px solid rgba(23,105,224,.13); border-color: #75aaf1 !important; }
+        .custom-toggle { display: inline-flex; gap: 6px; padding: 7px 0; color: var(--blue); font-weight: 650; }
+        .custom-panel { border: 1px solid var(--line); background: #fbfdff; border-radius: 14px; }
+        .upload-area { border-color: #99bce2; background: linear-gradient(135deg, #f7fbff, #f0f8ff); padding: 42px 24px; }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--blue); background: #eaf4ff; box-shadow: inset 0 0 0 1px var(--blue); }
+        .upload-icon { font-size: 44px; }
+        .upload-text { color: var(--ink); font-weight: 700; }
+        .upload-hint { color: var(--muted); margin-top: 6px; }
+        .file-info { background: var(--blue-soft); border: 1px solid #c8ddf5; }
+        .btn-row { margin-top: 18px; }
+        .btn { padding: 13px 16px; border-radius: 10px; }
+        .btn-primary { background: linear-gradient(135deg, var(--blue), #2485e9); box-shadow: 0 6px 14px rgba(23,105,224,.16); }
+        .btn-primary:hover:not(:disabled) { box-shadow: 0 10px 22px rgba(23,105,224,.28); }
+        .btn-success { background: linear-gradient(135deg, #0d9488, #16b1a1); }
+        .result-section { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #fbfdff; }
+        .result-cards { grid-template-columns: repeat(5, 1fr); gap: 9px; }
+        .result-card { border: 1px solid var(--line); background: white; border-radius: 12px; }
+        .issue-list { max-height: 360px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+        .issue-item { padding: 12px 14px; }
+        .issue-item:hover { background: #f8fbfe; }
+        .badge.warning { background: var(--amber-soft); color: #a25a00; }
+        .badge.info { background: var(--blue-soft); color: #1769be; }
+        .badge.error { background: var(--danger-soft); color: #c52f46; }
+        .link-btn { background: var(--blue); }
+        .hint { color: var(--muted); }
+        .privacy-note { display: flex; gap: 10px; padding: 13px 15px; border-radius: 12px; background: var(--teal-soft); color: #16675f; font-size: 12px; line-height: 1.65; }
+        .privacy-note b { color: #075f56; }
+        .feature-unavailable { padding: 26px; border: 1px dashed #afc5d9; border-radius: 14px; background: #fbfdff; color: var(--muted); line-height: 1.8; text-align: center; }
+        .feature-unavailable strong { display:block; color: var(--ink); font-size: 16px; margin-bottom: 6px; }
+        @media (max-width: 720px) {
+            body { padding: 18px 12px 32px; }
+            .header { align-items: flex-start; flex-direction: column; gap: 14px; }
+            .tabs { padding: 0 12px; overflow-x: auto; }
+            .tab { padding-left: 11px; padding-right: 11px; white-space: nowrap; }
+            .tab-content { padding: 24px 18px 28px; }
+            .template-grid, .result-cards { grid-template-columns: repeat(2, 1fr); }
+            .workflow { grid-template-columns: 1fr; gap: 2px; }
+            .config-grid, .config-grid[style] { grid-template-columns: repeat(2, 1fr) !important; }
+            .polish-area { grid-template-columns: 1fr; }
+        }
+
+        /* Web desktop pet — source assets: 1190fasheqi/dafeiyu-pet (MIT). */
+        .pet-dock { position:fixed; right:22px; bottom:18px; z-index:1000; width:158px; user-select:none; touch-action:none; }
+        .pet-dock.is-dragging { cursor:grabbing; }
+        .pet-dock.is-sleeping { width:252px; }
+        .pet-dock.is-sleeping .pet-character { width:240px; }
+        .pet-dock.is-sleeping .pet-bubble { bottom:220px; }
+        .pet-bubble { display:none; position:absolute; right:0; bottom:142px; z-index:4; width:min(228px, calc(100vw - 24px)); padding:10px 12px; border:1px solid #bdd5f4; border-radius:14px 14px 4px 14px; background:rgba(255,255,255,.98); box-shadow:0 10px 28px rgba(24,73,128,.18); color:#284764; font-size:12px; line-height:1.55; animation:petBubbleIn .2s ease-out; }
+        .pet-bubble.show { display:block; }
+        .pet-character { position:relative; z-index:1; width:148px; margin-left:auto; cursor:grab; filter:drop-shadow(0 10px 11px rgba(17,68,133,.22)); transform-origin:50% 90%; animation:petBreathe 3.8s ease-in-out infinite; }
+        .pet-character img { display:block; width:100%; height:auto; pointer-events:none; }
+        .pet-character.thinking { animation:petThink .75s ease-in-out infinite alternate; }
+        .pet-character.celebrate { animation:petJump .7s cubic-bezier(.2,.8,.25,1) 2; }
+        .pet-character.eating { animation:petNibble .33s ease-in-out 5; }
+        .pet-character.sleeping { animation:petSleep 3s ease-in-out infinite; opacity:.84; }
+        .pet-character.waving { animation:petWave .5s ease-in-out 3; }
+        .pet-character.heart { animation:petHeart .72s ease-in-out 3; }
+        .pet-character.error { animation:petShake .42s ease-in-out 2; }
+        .pet-character.walking { animation:petWalk .42s ease-in-out infinite alternate; }
+        .pet-status { position:absolute; right:0; bottom:0; padding:4px 8px; border-radius:999px; background:#0d4f9c; color:#fff; border:2px solid #fff; box-shadow:0 3px 10px rgba(13,79,156,.25); font-size:11px; white-space:nowrap; pointer-events:none; }
+        .pet-trigger { position:absolute; right:0; top:-2px; width:30px; height:30px; border:0; border-radius:50%; background:#fff; color:#1769e0; box-shadow:0 3px 12px rgba(15,61,112,.22); cursor:pointer; font-size:16px; line-height:1; }
+        .pet-dock.is-minimized { width:38px; height:38px; }
+        .pet-dock.is-minimized .pet-character, .pet-dock.is-minimized .pet-status { display:none; }
+        .pet-dock.is-minimized .pet-trigger { position:static; width:38px; height:38px; font-size:19px; }
+        .pet-menu { display:none; position:absolute; right:2px; bottom:147px; width:224px; padding:9px; border:1px solid #c6dcf4; border-radius:16px; background:rgba(255,255,255,.98); box-shadow:0 16px 38px rgba(18,63,112,.2); }
+        .pet-menu.show { display:block; animation:petBubbleIn .18s ease-out; }
+        .pet-menu-title { padding:4px 7px 8px; color:#1a4d81; font-size:12px; font-weight:700; }
+        .pet-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .pet-action { padding:8px 7px; border:1px solid #e0ecfa; border-radius:10px; background:#f8fbff; color:#31516f; font:inherit; font-size:12px; cursor:pointer; text-align:left; }
+        .pet-action:hover { background:#e8f3ff; border-color:#9cc6f3; }
+        .pet-credit { display:block; margin:9px 5px 1px; color:#7990a8; font-size:10px; text-decoration:none; }
+        .pet-food { position:absolute; right:48px; bottom:72px; font-size:25px; pointer-events:none; animation:petFood .9s ease-in forwards; }
+        @keyframes petBreathe { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-4px) scale(1.012, .99); } }
+        @keyframes petThink { from { transform:translateX(-3px) rotate(-2deg); } to { transform:translateX(3px) rotate(2deg); } }
+        @keyframes petJump { 0%,100% { transform:translateY(0) scale(1); } 35% { transform:translateY(-26px) scale(.95,1.06); } 62% { transform:translateY(0) scale(1.08,.9); } }
+        @keyframes petNibble { 0%,100% { transform:rotate(0); } 50% { transform:rotate(-5deg) translateY(2px); } }
+        @keyframes petSleep { 0%,100% { transform:translateY(0); } 50% { transform:translateY(3px) rotate(1deg); } }
+        @keyframes petWave { 0%,100% { transform:rotate(0); } 50% { transform:rotate(-7deg) translateY(-4px); } }
+        @keyframes petHeart { 0%,100% { transform:scale(1); } 50% { transform:scale(1.09) translateY(-5px); } }
+        @keyframes petShake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-8px); } 75% { transform:translateX(8px); } }
+        @keyframes petWalk { from { transform:translateY(0) rotate(-2.2deg); } to { transform:translateY(-7px) rotate(2.2deg); } }
+        @keyframes petFood { from { opacity:1; transform:translateY(-18px) rotate(-12deg); } to { opacity:0; transform:translate(30px,34px) rotate(30deg) scale(.25); } }
+        @keyframes petBubbleIn { from { opacity:0; transform:translateY(5px) scale(.97); } to { opacity:1; transform:none; } }
+        @media (max-width:720px) { .pet-dock { right:9px; bottom:10px; transform:scale(.82); transform-origin:bottom right; } .pet-dock.is-sleeping { transform:scale(.68); } .pet-menu { width:210px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true">✓</div>
+                <div>
+                    <h1>论文格式检查工作台</h1>
+                    <p>选择规范、检查文档、确认修复 — 每一步都可追溯</p>
+                </div>
+            </div>
+            <div class="local-badge">本地处理 · 文档不外传</div>
+        </header>
+
+        <div class="main-card">
+            <div class="tabs">
+                <div class="tab active" data-tab="check">检查与修复</div>
+                <div class="tab" data-tab="polish">使用边界</div>
+                <div class="tab" data-tab="settings">高级设置</div>
+            </div>
+
+            <!-- 格式检查标签页 -->
+            <div class="tab-content active" id="tab-check">
+                <div class="workflow" aria-label="使用流程">
+                    <div class="workflow-step"><span class="workflow-num">1</span><div><strong>选择规范</strong>模板或本地规则解读</div></div>
+                    <div class="workflow-step"><span class="workflow-num">2</span><div><strong>检查文档</strong>定位格式差异与可修复项</div></div>
+                    <div class="workflow-step"><span class="workflow-num">3</span><div><strong>确认修复</strong>下载副本，原文不被覆盖</div></div>
+                </div>
+                <div class="section-title">📋 选择格式模板</div>
+                <div class="template-grid" id="templateGrid"></div>
+
+                <div class="section-title">🧭 解读格式要求</div>
+                <div class="requirement-card">
+                    <div class="lead">
+                        粘贴老师或学校的格式说明，系统会在本机提取常见参数；未识别的内容会保留给你确认，不会上传文本。
+                        <span id="aiParseHint">（本地规则解读）</span>
+                    </div>
+                    <textarea id="requirementText" placeholder="例如：论文采用A4纸，页边距上下2.5cm，左3cm右2.5cm。正文宋体小四，1.5倍行距，首行缩进2字符。一级标题黑体三号居中，二级标题黑体四号..."
+                        style="width:100%;min-height:80px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+                    <div style="display:flex;gap:10px;margin-top:10px;">
+                        <button class="btn btn-primary" style="flex:0 0 auto;padding:8px 20px;font-size:13px;" onclick="parseRequirements()">🔍 开始解读</button>
+                        <button class="btn" style="flex:0 0 auto;padding:8px 20px;font-size:13px;background:#f0f0f0;color:#666;" onclick="clearRequirements()">清空</button>
+                    </div>
+                    <div id="parseResult" style="display:none;margin-top:12px;"></div>
+                </div>
+
+                <div class="custom-toggle" onclick="toggleCustom()">⚙️ 自定义格式参数（高级） ▾</div>
+                <div class="custom-panel" id="customPanel">
+                    <div style="font-size:13px;color:#666;margin-bottom:10px;">
+                        💡 修改以下参数后，检查和修复将按自定义标准执行。中文字体与英文/数字字体分别设置。
+                    </div>
+
+                    <div style="font-size:13px;font-weight:600;color:#4a6cf7;margin:12px 0 8px;">📄 页面设置</div>
+                    <div class="config-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="config-item">
+                            <label>纸张大小</label>
+                            <select id="cfg_paper_size" onchange="onPaperSizeChange()">
+                                <option value="A4">A4（21×29.7cm）</option>
+                                <option value="A3">A3（29.7×42cm）</option>
+                                <option value="B5">B5（17.6×25cm）</option>
+                                <option value="16开">16开（18.4×26cm）</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>纸张宽度(cm)</label>
+                            <input type="number" step="0.1" id="cfg_paper_width" value="21.0">
+                        </div>
+                        <div class="config-item">
+                            <label>纸张高度(cm)</label>
+                            <input type="number" step="0.1" id="cfg_paper_height" value="29.7">
+                        </div>
+                        <div class="config-item"></div>
+                        <div class="config-item">
+                            <label>上边距(cm)</label>
+                            <input type="number" step="0.1" id="cfg_top_margin" value="2.54">
+                        </div>
+                        <div class="config-item">
+                            <label>下边距(cm)</label>
+                            <input type="number" step="0.1" id="cfg_bottom_margin" value="2.54">
+                        </div>
+                        <div class="config-item">
+                            <label>左边距(cm)</label>
+                            <input type="number" step="0.1" id="cfg_left_margin" value="3.17">
+                        </div>
+                        <div class="config-item">
+                            <label>右边距(cm)</label>
+                            <input type="number" step="0.1" id="cfg_right_margin" value="3.17">
+                        </div>
+                    </div>
+
+                    <div style="font-size:13px;font-weight:600;color:#4a6cf7;margin:12px 0 8px;">📝 正文格式</div>
+                    <div class="config-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="config-item">
+                            <label>正文中文字体</label>
+                            <select id="cfg_body_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>正文英文/数字字体</label>
+                            <select id="cfg_body_en_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>正文字号</label>
+                            <select id="cfg_body_size" onchange="onBodySizeChange()"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>正文行距</label>
+                            <select id="cfg_body_line">
+                                <option value="1.0">单倍行距</option>
+                                <option value="1.25">1.25倍</option>
+                                <option value="1.5">1.5倍</option>
+                                <option value="1.75">1.75倍</option>
+                                <option value="2.0">2倍行距</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>首行缩进(字符)</label>
+                            <select id="cfg_first_line_indent">
+                                <option value="0">不缩进</option>
+                                <option value="1">1字符</option>
+                                <option value="2" selected>2字符</option>
+                                <option value="3">3字符</option>
+                                <option value="4">4字符</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>正文对齐</label>
+                            <select id="cfg_body_alignment">
+                                <option value="justify">两端对齐</option>
+                                <option value="left">左对齐</option>
+                                <option value="center">居中</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="font-size:13px;font-weight:600;color:#4a6cf7;margin:12px 0 8px;">🏷️ 标题格式</div>
+                    <div class="config-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="config-item">
+                            <label>一级标题中文字体</label>
+                            <select id="cfg_h1_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题英文/数字字体</label>
+                            <select id="cfg_h1_en_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题字号</label>
+                            <select id="cfg_h1_size"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题对齐</label>
+                            <select id="cfg_h1_align">
+                                <option value="center">居中</option>
+                                <option value="left">左对齐</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题加粗</label>
+                            <select id="cfg_h1_bold">
+                                <option value="false">不加粗</option>
+                                <option value="true">加粗</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题段前(pt)</label>
+                            <input type="number" id="cfg_h1_space_before" value="12">
+                        </div>
+                        <div class="config-item">
+                            <label>一级标题段后(pt)</label>
+                            <input type="number" id="cfg_h1_space_after" value="12">
+                        </div>
+                        <div class="config-item"></div>
+                        <div class="config-item">
+                            <label>二级标题中文字体</label>
+                            <select id="cfg_h2_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>二级标题英文/数字字体</label>
+                            <select id="cfg_h2_en_font"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>二级标题字号</label>
+                            <select id="cfg_h2_size"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>二级标题加粗</label>
+                            <select id="cfg_h2_bold">
+                                <option value="false">不加粗</option>
+                                <option value="true">加粗</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="font-size:13px;font-weight:600;color:#4a6cf7;margin:12px 0 8px;">📚 参考文献</div>
+                    <div class="config-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="config-item">
+                            <label>参考文献字号</label>
+                            <select id="cfg_ref_size"></select>
+                        </div>
+                        <div class="config-item">
+                            <label>参考文献行距</label>
+                            <select id="cfg_ref_line_spacing">
+                                <option value="1.0">单倍</option>
+                                <option value="1.25">1.25倍</option>
+                                <option value="1.5">1.5倍</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title" style="margin-top:20px;">📁 上传文档</div>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">点击或拖拽 Word 文档到此处</div>
+                    <div class="upload-hint">支持 .docx 格式，最大 50MB</div>
+                </div>
+                <input type="file" id="fileInput" accept=".docx" style="display:none">
+
+                <div class="file-info" id="fileInfo">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-size" id="fileSize"></div>
+                    </div>
+                    <button class="remove-file" id="removeFile">×</button>
+                </div>
+                <label class="fix-consent" id="fixConsent">
+                    <input type="checkbox" id="backupConfirmed">
+                    <span>我已保留原稿备份，并理解复杂版式仍需在 Word 中人工复核。修复结果将生成新文件，不会覆盖原文件。</span>
+                </label>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="checkBtn" disabled>🔍 开始检查</button>
+                    <button class="btn btn-success" id="fixBtn" disabled>🔧 一键修复并下载</button>
+                </div>
+
+                <div class="error-msg" id="errorMsg"></div>
+                <div class="success-msg" id="successMsg"></div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div id="loadingText">正在检查文档格式...</div>
+                </div>
+
+                <div class="result-section" id="resultSection">
+                    <div class="result-cards" id="resultCards"></div>
+                    <div class="section-title">📝 问题详情</div>
+                    <div class="issue-list" id="issueList"></div>
+                    <a href="#" target="_blank" class="link-btn" id="reportLink">查看完整报告 →</a>
+                </div>
+            </div>
+
+            <!-- 使用边界标签页 -->
+            <div class="tab-content" id="tab-polish">
+                <div class="section-title">先检查，再人工确认</div>
+                <div class="privacy-note"><span>✓</span><div><b>文档只在本机处理。</b>系统不会上传论文或作业；修复结果始终另存为新文件，原文保持不变。</div></div>
+                <div class="feature-unavailable" style="margin-top:16px;">
+                    <strong>哪些事情需要你最后确认？</strong>
+                    目录页码、公式显示、文本框、脚注、页眉页脚、图片排版和学校特定封面规则，无法只靠文档结构可靠判断。请结合检查报告和 Word 预览逐项核对。
+                </div>
+            </div>
+
+            <!-- 高级设置标签页 -->
+            <div class="tab-content" id="tab-settings">
+                <div class="settings-section">
+                    <h3>模板与自定义规则</h3>
+                    <p style="font-size:13px;color:#61728a;line-height:1.8;">
+                        内置模板仅作为常见起点，不代表任何学校的正式规范。使用学校发布的模板、样例或格式指南时，请在「检查与修复」页展开“自定义格式参数”，再按官方要求逐项确认。
+                    </p>
+                </div>
+
+                <div class="settings-section">
+                    <h3>ℹ️ 关于系统</h3>
+                    <p style="font-size:13px;color:#666;line-height:1.8;">
+                        <strong>格式检查：</strong>完全本地运行，无需联网，不收取任何费用。<br>
+                        <strong>一键修复：</strong>自动修正字体、字号、行距、缩进、页边距等格式问题。<br>
+                        <strong>处理范围：</strong>检查可从 DOCX 结构稳定读取的格式项，复杂版式应人工复核。<br>
+                        <strong>数据安全：</strong>所有文件和格式要求文本仅在本地处理，不上传到第三方服务器。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <aside class="pet-dock" id="petDock" aria-label="大肥鱼网页桌宠">
+        <div class="pet-bubble" id="petBubble" aria-live="polite"></div>
+        <div class="pet-menu" id="petMenu">
+            <div class="pet-menu-title">大肥鱼的小动作</div>
+            <div class="pet-actions">
+                <button class="pet-action" data-pet-action="feed">🍚 喂白米饭</button>
+                <button class="pet-action" data-pet-action="wave">👋 打个招呼</button>
+                <button class="pet-action" data-pet-action="wander">🚶 自由散步</button>
+                <button class="pet-action" data-pet-action="heart">💙 送你比心</button>
+                <button class="pet-action" data-pet-action="follow">🧭 跟随光标</button>
+                <button class="pet-action" data-pet-action="rest">🌙 安静休息</button>
+                <button class="pet-action" data-pet-action="home">⌂ 回到角落</button>
+                <button class="pet-action" data-pet-action="hide">× 暂时收起</button>
+            </div>
+            <a class="pet-credit" href="https://github.com/1190fasheqi/dafeiyu-pet" target="_blank" rel="noreferrer">角色素材：1190fasheqi/dafeiyu-pet · MIT</a>
+        </div>
+        <button class="pet-trigger" id="petTrigger" type="button" aria-label="打开大肥鱼动作菜单">⋯</button>
+        <div class="pet-character" id="petCharacter" role="button" tabindex="0" aria-label="大肥鱼，单击互动，双击喂食，右键打开菜单">
+            <img id="petImage" src="{{ url_for('static', filename='pet/front.png') }}" alt="蓝色大肥鱼桌宠">
+        </div>
+        <span class="pet-status" id="petStatus">待机中</span>
+    </aside>
+
+    <script>
+        // 全局状态
+        let selectedFile = null;
+        let selectedTemplate = 'general';
+        let templates = [];
+        let fontOptions = null;
+        let lastReportUrl = '';
+        let lastIssuesCount = 0;
+
+        // DOM
+        const $ = id => document.getElementById(id);
+
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                $('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // 加载模板列表
+        async function loadTemplates() {
+            try {
+                const [tResp, fResp] = await Promise.all([
+                    fetch('/api/templates'),
+                    fetch('/api/font-options')
+                ]);
+                const tData = await tResp.json();
+                const fData = await fResp.json();
+                templates = tData.templates;
+                fontOptions = fData;
+                initFontSelects();
+                renderTemplates();
+                // 默认加载general模板参数
+                selectTemplate('general');
+            } catch(e) { console.error(e); }
+        }
+
+        function initFontSelects() {
+            if (!fontOptions) return;
+            const cnFonts = fontOptions.cn_fonts;
+            const enFonts = fontOptions.en_fonts;
+            const sizes = fontOptions.sizes;
+
+            // 填充中文字体下拉框
+            ['cfg_body_font', 'cfg_h1_font', 'cfg_h2_font'].forEach(id => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = cnFonts.map(f => `<option value="${f}">${f}</option>`).join('');
+            });
+            // 填充英文字体下拉框
+            ['cfg_body_en_font', 'cfg_h1_en_font', 'cfg_h2_en_font'].forEach(id => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = enFonts.map(f => `<option value="${f}">${f}</option>`).join('');
+            });
+            // 填充字号下拉框
+            ['cfg_body_size', 'cfg_h1_size', 'cfg_h2_size', 'cfg_ref_size'].forEach(id => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = sizes.map(s => `<option value="${s.pt}">${s.name}（${s.pt}pt）</option>`).join('');
+            });
+        }
+
+        function renderTemplates() {
+            const icons = { general: '📄', thesis: '🎓', homework: '📝', journal: '📰', custom: '⚙️' };
+            let html = templates.map(t => `
+                <div class="template-card ${t.id === selectedTemplate ? 'active' : ''}" data-id="${t.id}" onclick="selectTemplate('${t.id}')">
+                    <div class="t-icon">${icons[t.id] || '📄'}</div>
+                    <div class="t-name">${t.name}</div>
+                    <div class="t-desc">${t.description}</div>
+                </div>
+            `).join('');
+            // 增加自定义模板卡片
+            html += `
+                <div class="template-card ${selectedTemplate === 'custom' ? 'active' : ''}" onclick="selectCustom()">
+                    <div class="t-icon">⚙️</div>
+                    <div class="t-name">自定义</div>
+                    <div class="t-desc">使用下方自定义参数</div>
+                </div>
+            `;
+            $('templateGrid').innerHTML = html;
+        }
+
+        function selectCustom() {
+            selectedTemplate = 'custom';
+            renderTemplates();
+            if (!$('customPanel').classList.contains('show')) {
+                toggleCustom();
+            }
+        }
+
+        function selectTemplate(id) {
+            selectedTemplate = id;
+            renderTemplates();
+            fetch('/api/template/' + id).then(r => r.json()).then(data => {
+                if (data.template) {
+                    const c = data.template;
+                    // 页面设置
+                    setPaperSize(c.paper_width, c.paper_height);
+                    $('cfg_top_margin').value = c.top_margin;
+                    $('cfg_bottom_margin').value = c.bottom_margin;
+                    $('cfg_left_margin').value = c.left_margin;
+                    $('cfg_right_margin').value = c.right_margin;
+                    // 正文
+                    setSelectValue('cfg_body_font', c.body_font);
+                    setSelectValue('cfg_body_en_font', c.body_en_font);
+                    setSelectValue('cfg_body_size', c.body_size);
+                    $('cfg_body_line').value = c.body_line_spacing;
+                    $('cfg_body_alignment').value = c.body_alignment;
+                    // 首行缩进（根据字号计算字符数）
+                    const indentChars = Math.round(c.body_first_line_indent / c.body_size);
+                    $('cfg_first_line_indent').value = indentChars;
+                    // 一级标题
+                    setSelectValue('cfg_h1_font', c.h1_font);
+                    setSelectValue('cfg_h1_en_font', c.h1_en_font);
+                    setSelectValue('cfg_h1_size', c.h1_size);
+                    $('cfg_h1_align').value = c.h1_alignment;
+                    $('cfg_h1_bold').value = c.h1_bold ? 'true' : 'false';
+                    $('cfg_h1_space_before').value = c.h1_space_before;
+                    $('cfg_h1_space_after').value = c.h1_space_after;
+                    // 二级标题
+                    setSelectValue('cfg_h2_font', c.h2_font);
+                    setSelectValue('cfg_h2_en_font', c.h2_en_font);
+                    setSelectValue('cfg_h2_size', c.h2_size);
+                    $('cfg_h2_bold').value = c.h2_bold ? 'true' : 'false';
+                    // 参考文献
+                    setSelectValue('cfg_ref_size', c.ref_size);
+                    $('cfg_ref_line_spacing').value = c.ref_line_spacing;
+                }
+            });
+        }
+
+        function setPaperSize(width, height) {
+            const paperMap = {
+                '21,29.7': 'A4', '29.7,42': 'A3',
+                '17.6,25': 'B5', '18.4,26': '16开'
+            };
+            const key = `${width},${height}`;
+            if (paperMap[key]) {
+                $('cfg_paper_size').value = paperMap[key];
+            } else {
+                $('cfg_paper_size').value = 'custom';
+            }
+            $('cfg_paper_width').value = width;
+            $('cfg_paper_height').value = height;
+        }
+
+        function onPaperSizeChange() {
+            const size = $('cfg_paper_size').value;
+            const paperMap = {
+                'A4': [21.0, 29.7], 'A3': [29.7, 42.0],
+                'B5': [17.6, 25.0], '16开': [18.4, 26.0]
+            };
+            if (paperMap[size]) {
+                $('cfg_paper_width').value = paperMap[size][0];
+                $('cfg_paper_height').value = paperMap[size][1];
+            }
+        }
+
+        function onBodySizeChange() {
+            // 正文字号变化时，自动调整首行缩进对应的pt值（但保持字符数不变）
+            // 这里不需要做什么，因为getCustomConfig会动态计算
+        }
+
+        function setSelectValue(id, value) {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            for (let opt of sel.options) {
+                if (parseFloat(opt.value) === parseFloat(value) || opt.value === value) {
+                    sel.value = opt.value;
+                    return;
+                }
+            }
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value;
+            sel.appendChild(opt);
+            sel.value = value;
+        }
+
+        function clearRequirements() {
+            $('requirementText').value = '';
+            $('parseResult').style.display = 'none';
+        }
+
+        async function parseRequirements() {
+            const text = $('requirementText').value.trim();
+            if (!text) {
+                alert('请先粘贴格式要求文本');
+                return;
+            }
+            const resultDiv = $('parseResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="padding:12px;text-align:center;color:#666;"><div class="spinner" style="width:24px;height:24px;border-width:3px;margin:0 auto 8px;"></div>正在解读格式要求...</div>';
+
+            try {
+                const resp = await fetch('/api/parse-requirements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showParseResult(data);
+                } else {
+                    resultDiv.innerHTML = `<div style="color:#e74c3c;padding:10px;">解析失败：${data.error}</div>`;
+                }
+            } catch(err) {
+                resultDiv.innerHTML = `<div style="color:#e74c3c;padding:10px;">网络错误：${err.message}</div>`;
+            }
+        }
+
+        function showParseResult(data) {
+            const resultDiv = $('parseResult');
+            const c = data.config;
+            const conf = data.confidence;
+            const unclear = data.unclear;
+
+            let html = `<div style="background:#e8f4fd;border-radius:8px;padding:12px;margin-bottom:10px;">
+                <div style="font-size:13px;font-weight:600;color:#3498db;margin-bottom:6px;">
+                    ✅ 本地解读完成，提取到 ${data.extracted_count} 项参数
+                </div>`;
+
+            // 已提取参数
+            html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:12px;">';
+            const displayItems = [
+                ['纸张', `${c.paper_width}×${c.paper_height}cm`],
+                ['上边距', `${c.top_margin}cm`],
+                ['下边距', `${c.bottom_margin}cm`],
+                ['左边距', `${c.left_margin}cm`],
+                ['右边距', `${c.right_margin}cm`],
+                ['正文字体', `${c.body_font} / ${c.body_en_font}`],
+                ['正文字号', `${c.body_size}pt`],
+                ['行距', `${c.body_line_spacing}倍`],
+                ['首行缩进', `${Math.round(c.body_first_line_indent / c.body_size)}字符`],
+                ['一级标题', `${c.h1_font} ${c.h1_size}pt`],
+                ['二级标题', `${c.h2_font} ${c.h2_size}pt`],
+                ['参考文献', `${c.ref_size}pt`],
+            ];
+            displayItems.forEach(([label, value]) => {
+                html += `<div style="background:white;padding:4px 8px;border-radius:4px;"><span style="color:#888;">${label}：</span><span style="color:#333;font-weight:500;">${value}</span></div>`;
+            });
+            html += '</div>';
+
+            // 未明确项
+            if (unclear && unclear.length > 0) {
+                html += `<div style="margin-top:8px;font-size:12px;color:#f39c12;">
+                    ⚠️ 以下 ${unclear.length} 项未在要求中明确，已按默认值处理：<br>${unclear.map(u => '• ' + u).join('<br>')}
+                </div>`;
+            }
+
+            html += `<div style="margin-top:10px;">
+                <button class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick='applyParsedConfig(${JSON.stringify(c).replace(/'/g, "\\'")})'>
+                    ✨ 应用到自定义配置并展开
+                </button>
+            </div></div>`;
+
+            resultDiv.innerHTML = html;
+        }
+
+        function applyParsedConfig(config) {
+            // 展开自定义面板
+            if (!$('customPanel').classList.contains('show')) {
+                toggleCustom();
+            }
+            // 应用所有参数
+            setPaperSize(config.paper_width, config.paper_height);
+            $('cfg_top_margin').value = config.top_margin;
+            $('cfg_bottom_margin').value = config.bottom_margin;
+            $('cfg_left_margin').value = config.left_margin;
+            $('cfg_right_margin').value = config.right_margin;
+            setSelectValue('cfg_body_font', config.body_font);
+            setSelectValue('cfg_body_en_font', config.body_en_font);
+            setSelectValue('cfg_body_size', config.body_size);
+            $('cfg_body_line').value = config.body_line_spacing;
+            $('cfg_body_alignment').value = config.body_alignment;
+            const indentChars = Math.round(config.body_first_line_indent / config.body_size);
+            $('cfg_first_line_indent').value = indentChars;
+            setSelectValue('cfg_h1_font', config.h1_font);
+            setSelectValue('cfg_h1_en_font', config.h1_en_font);
+            setSelectValue('cfg_h1_size', config.h1_size);
+            $('cfg_h1_align').value = config.h1_alignment;
+            $('cfg_h1_bold').value = config.h1_bold ? 'true' : 'false';
+            $('cfg_h1_space_before').value = config.h1_space_before;
+            $('cfg_h1_space_after').value = config.h1_space_after;
+            setSelectValue('cfg_h2_font', config.h2_font);
+            setSelectValue('cfg_h2_en_font', config.h2_en_font);
+            setSelectValue('cfg_h2_size', config.h2_size);
+            $('cfg_h2_bold').value = config.h2_bold ? 'true' : 'false';
+            setSelectValue('cfg_ref_size', config.ref_size);
+            $('cfg_ref_line_spacing').value = config.ref_line_spacing;
+            // 切换到自定义模板
+            selectedTemplate = 'custom';
+            renderTemplates();
+            // 滚动到自定义面板
+            $('customPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function toggleCustom() {
+            $('customPanel').classList.toggle('show');
+        }
+
+        function getCustomConfig() {
+            // 如果自定义面板展开了，返回自定义配置
+            if (!$('customPanel').classList.contains('show')) return null;
+            const bodySize = parseFloat($('cfg_body_size').value);
+            const h1Size = parseFloat($('cfg_h1_size').value);
+            const h2Size = parseFloat($('cfg_h2_size').value);
+            const refSize = parseFloat($('cfg_ref_size').value);
+            const indentChars = parseInt($('cfg_first_line_indent').value);
+            return {
+                name: "自定义",
+                paper_width: parseFloat($('cfg_paper_width').value),
+                paper_height: parseFloat($('cfg_paper_height').value),
+                top_margin: parseFloat($('cfg_top_margin').value),
+                bottom_margin: parseFloat($('cfg_bottom_margin').value),
+                left_margin: parseFloat($('cfg_left_margin').value),
+                right_margin: parseFloat($('cfg_right_margin').value),
+                body_font: $('cfg_body_font').value,
+                body_en_font: $('cfg_body_en_font').value,
+                body_size: bodySize,
+                body_line_spacing: parseFloat($('cfg_body_line').value),
+                body_first_line_indent: bodySize * indentChars,
+                body_alignment: $('cfg_body_alignment').value,
+                h1_font: $('cfg_h1_font').value,
+                h1_en_font: $('cfg_h1_en_font').value,
+                h1_size: h1Size,
+                h1_bold: $('cfg_h1_bold').value === 'true',
+                h1_alignment: $('cfg_h1_align').value,
+                h1_space_before: parseFloat($('cfg_h1_space_before').value),
+                h1_space_after: parseFloat($('cfg_h1_space_after').value),
+                h2_font: $('cfg_h2_font').value,
+                h2_en_font: $('cfg_h2_en_font').value,
+                h2_size: h2Size,
+                h2_bold: $('cfg_h2_bold').value === 'true',
+                h2_alignment: "left",
+                h2_space_before: 6, h2_space_after: 6,
+                h3_font: "黑体", h3_en_font: "Times New Roman",
+                h3_size: 12, h3_bold: true, h3_alignment: "left",
+                ref_font: "宋体", ref_en_font: "Times New Roman",
+                ref_size: refSize,
+                ref_line_spacing: parseFloat($('cfg_ref_line_spacing').value),
+                keyword_font: "黑体", keyword_en_font: "Times New Roman",
+                keyword_size: 12,
+            };
+        }
+
+        // 文件上传
+        $('uploadArea').addEventListener('click', () => $('fileInput').click());
+        $('uploadArea').addEventListener('dragover', e => { e.preventDefault(); $('uploadArea').classList.add('dragover'); });
+        $('uploadArea').addEventListener('dragleave', () => $('uploadArea').classList.remove('dragover'));
+        $('uploadArea').addEventListener('drop', e => {
+            e.preventDefault();
+            $('uploadArea').classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        $('fileInput').addEventListener('change', e => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.docx')) {
+                showError('仅支持 .docx 格式文件');
+                return;
+            }
+            selectedFile = file;
+            $('fileName').textContent = file.name;
+            $('fileSize').textContent = formatSize(file.size);
+            $('fileInfo').classList.add('show');
+            $('fixConsent').classList.add('show');
+            $('backupConfirmed').checked = false;
+            $('checkBtn').disabled = false;
+            $('fixBtn').disabled = true;
+            $('resultSection').classList.remove('show');
+            hideError(); hideSuccess();
+            petSetState('reading', '收到文档啦，我先翻翻格式。', 2600);
+        }
+
+        $('removeFile').addEventListener('click', e => {
+            e.stopPropagation();
+            selectedFile = null;
+            $('fileInput').value = '';
+            $('fileInfo').classList.remove('show');
+            $('fixConsent').classList.remove('show');
+            $('backupConfirmed').checked = false;
+            $('checkBtn').disabled = true;
+            $('fixBtn').disabled = true;
+            $('resultSection').classList.remove('show');
+            petSetState('idle', '那我继续在这里待命。', 2200);
+        });
+
+        $('backupConfirmed').addEventListener('change', e => {
+            $('fixBtn').disabled = !selectedFile || !e.target.checked;
+        });
+
+        // 检查
+        $('checkBtn').addEventListener('click', async () => {
+            if (!selectedFile) return;
+            $('checkBtn').disabled = true;
+            $('loadingText').textContent = '正在检查文档格式...';
+            $('loading').classList.add('show');
+            $('resultSection').classList.remove('show');
+            hideError(); hideSuccess();
+            petSetState('thinking', '正在逐项核对格式，请稍等。');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('template', selectedTemplate);
+            const custom = getCustomConfig();
+            if (custom) formData.append('custom_config', JSON.stringify(custom));
+
+            try {
+                const resp = await fetch('/api/check', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.success) {
+                    lastIssuesCount = data.summary.total_issues;
+                    lastReportUrl = data.report_url;
+                    renderResults(data.summary);
+                    renderIssues(data.report.issues);
+                    $('reportLink').href = data.report_url;
+                    $('resultSection').classList.add('show');
+                    petSetState('celebrate', `检查完成，发现 ${data.summary.total_issues} 项，报告在下面。`, 4200);
+                } else {
+                    showError(data.error || '检查失败');
+                    petSetState('error', '唔，检查没成功。看看提示再试一次吧。', 4000);
+                }
+            } catch(err) {
+                showError('网络错误：' + err.message);
+                petSetState('error', '连接好像出了点问题。', 4000);
+            } finally {
+                $('checkBtn').disabled = false;
+                $('loading').classList.remove('show');
+            }
+        });
+
+        // 一键修复
+        $('fixBtn').addEventListener('click', async () => {
+            if (!selectedFile) return;
+            $('fixBtn').disabled = true;
+            $('loadingText').textContent = '正在自动修复格式...';
+            $('loading').classList.add('show');
+            hideError(); hideSuccess();
+            petSetState('thinking', '我在小心整理格式，原稿不会被覆盖。');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('template', selectedTemplate);
+            formData.append('issues_before', lastIssuesCount);
+            const custom = getCustomConfig();
+            if (custom) formData.append('custom_config', JSON.stringify(custom));
+
+            try {
+                const resp = await fetch('/api/fix', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.success) {
+                    showFixResult(data);
+                    petSetState('celebrate', `修复好了 ${data.total_fixes} 处，正在下载副本！`, 4500);
+                    // 自动下载
+                    window.location.href = data.download_url;
+                } else {
+                    showError(data.error || '修复失败');
+                    petSetState('error', '这次修复没有完成，原文件仍是安全的。', 4200);
+                }
+            } catch(err) {
+                showError('网络错误：' + err.message);
+                petSetState('error', '连接出了点问题，稍后再试试。', 4000);
+            } finally {
+                $('fixBtn').disabled = false;
+                $('loading').classList.remove('show');
+            }
+        });
+
+        function showFixResult(data) {
+            // 展示修复结果
+            let html = `<div style="margin-top:16px;padding:16px;background:#eafaf1;border-radius:10px;">
+                <div style="font-size:15px;font-weight:600;color:#27ae60;margin-bottom:10px;">
+                    ✅ 修复完成！共修改 ${data.total_fixes} 处格式
+                </div>
+                <div style="font-size:13px;color:#555;margin-bottom:10px;">
+                    修复前问题数：<strong>${data.issues_before}</strong> → 修复后剩余：<strong>${data.issues_after}</strong>
+                </div>`;
+            // 按类别统计
+            if (data.fix_stats && Object.keys(data.fix_stats).length > 0) {
+                html += '<div style="font-size:13px;color:#555;margin-bottom:8px;">修改分类：</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
+                for (const [cat, count] of Object.entries(data.fix_stats)) {
+                    html += `<span style="background:white;padding:3px 10px;border-radius:12px;font-size:12px;">${cat}: ${count}处</span>`;
+                }
+                html += '</div>';
+            }
+            // 修改详情（可展开）
+            if (data.fix_records && data.fix_records.length > 0) {
+                html += `<details style="margin-top:8px;">
+                    <summary style="cursor:pointer;font-size:13px;color:#4a6cf7;">查看修改详情（${data.fix_records.length}条）</summary>
+                    <div style="margin-top:8px;max-height:250px;overflow-y:auto;background:white;border-radius:8px;padding:8px;">
+                    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                        <thead><tr style="background:#f5f5f5;">
+                            <th style="padding:6px;text-align:left;">位置</th>
+                            <th style="padding:6px;text-align:left;">修改项</th>
+                            <th style="padding:6px;text-align:left;">修改前</th>
+                            <th style="padding:6px;text-align:left;">修改后</th>
+                        </tr></thead><tbody>`;
+                data.fix_records.slice(0, 100).forEach(r => {
+                    html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:5px;">${r.location}</td>
+                        <td style="padding:5px;">${r.item}</td>
+                        <td style="padding:5px;color:#e74c3c;">${r.old_value}</td>
+                        <td style="padding:5px;color:#27ae60;">${r.new_value}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div></details>';
+            }
+            html += '</div>';
+            // 插入到结果区域
+            const resultSection = $('resultSection');
+            const fixDiv = document.createElement('div');
+            fixDiv.innerHTML = html;
+            resultSection.insertBefore(fixDiv, resultSection.firstChild);
+            resultSection.classList.add('show');
+        }
+
+        function renderResults(summary) {
+            $('resultCards').innerHTML = `
+                <div class="result-card total"><div class="num">${summary.total_issues}</div><div class="label">问题总数</div></div>
+                <div class="result-card error"><div class="num">${summary.error_count}</div><div class="label">严重</div></div>
+                <div class="result-card warning"><div class="num">${summary.warning_count}</div><div class="label">警告</div></div>
+                <div class="result-card info"><div class="num">${summary.info_count}</div><div class="label">建议</div></div>
+                <div class="result-card fixable"><div class="num">${summary.fixable_count}</div><div class="label">可自动修复</div></div>
+            `;
+        }
+
+        function renderIssues(issues) {
+            const severityLabel = { error: '严重', warning: '警告', info: '建议' };
+            $('issueList').innerHTML = issues.map((i, idx) => `
+                <div class="issue-item">
+                    <div class="issue-header">
+                        <span class="badge ${i.severity}">${severityLabel[i.severity]}</span>
+                        ${i.fixable ? '<span class="badge fixable">可修复</span>' : ''}
+                        <span class="issue-loc">${i.location} · ${i.category}</span>
+                    </div>
+                    <div class="issue-desc">${i.description}</div>
+                    <div class="issue-sug">💡 ${i.suggestion}</div>
+                </div>
+            `).join('');
+        }
+
+        // AI润色
+        async function doPolish() {
+            const text = $('polishInput').value.trim();
+            const apiKey = $('apiKey').value.trim();
+            if (!text) { showPolishError('请输入需要润色的文本'); return; }
+            if (!apiKey) { showPolishError('请先在「设置」中填写 API Key'); return; }
+
+            $('polishOutput').value = '润色中，请稍候...';
+            hidePolishError();
+
+            try {
+                const resp = await fetch('/api/polish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        api_base: $('apiBase').value.trim(),
+                        model: $('apiModel').value.trim(),
+                        text: text
+                    })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    $('polishOutput').value = data.polished_text;
+                } else {
+                    $('polishOutput').value = '';
+                    showPolishError(data.error);
+                }
+            } catch(err) {
+                $('polishOutput').value = '';
+                showPolishError('请求失败：' + err.message);
+            }
+        }
+
+        function copyPolished() {
+            const text = $('polishOutput').value;
+            if (text) {
+                navigator.clipboard.writeText(text);
+                alert('已复制到剪贴板');
+            }
+        }
+
+        // 预留本地偏好设置入口；当前版本不保存 API Key 或调用外部模型。
+        function saveSettings() {
+            localStorage.setItem('paper_api_key', $('apiKey').value);
+            localStorage.setItem('paper_api_base', $('apiBase').value);
+            localStorage.setItem('paper_api_model', $('apiModel').value);
+            updateApiStatus();
+            alert('设置已保存到本地');
+        }
+
+        function loadSettings() {
+            return;
+        }
+
+        function updateApiStatus() {
+            const el = $('apiStatus');
+            if (!el) return;
+            if ($('apiKey').value.trim()) {
+                el.className = 'api-status ok';
+                el.textContent = '✓ API Key 已配置';
+            } else {
+                el.className = 'api-status no';
+                el.textContent = '✗ 未配置 API Key（润色功能不可用）';
+            }
+        }
+
+        // 工具函数
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+            return (bytes/(1024*1024)).toFixed(1) + ' MB';
+        }
+        function showError(msg) { $('errorMsg').textContent = msg; $('errorMsg').classList.add('show'); }
+        function hideError() { $('errorMsg').classList.remove('show'); }
+        function showSuccess(msg) { $('successMsg').textContent = msg; $('successMsg').classList.add('show'); }
+        function hideSuccess() { $('successMsg').classList.remove('show'); }
+        function showPolishError(msg) { $('polishError').textContent = msg; $('polishError').classList.add('show'); }
+        function hidePolishError() { $('polishError').classList.remove('show'); }
+
+        // 大肥鱼网页桌宠：保留互动，不接入模型、天气或任何电脑状态读取。
+        const petImages = {
+            front: "{{ url_for('static', filename='pet/front.png') }}",
+            side: "{{ url_for('static', filename='pet/side.png') }}",
+            back: "{{ url_for('static', filename='pet/back.png') }}",
+            blink: "{{ url_for('static', filename='pet/blink.png') }}",
+            wave: "{{ url_for('static', filename='pet/wave.png') }}",
+            wave2: "{{ url_for('static', filename='pet/wave2.png') }}",
+            rice: "{{ url_for('static', filename='pet/rice.png') }}",
+            sleep: "{{ url_for('static', filename='pet/sleep.png') }}",
+            heart: "{{ url_for('static', filename='pet/heart.png') }}"
+        };
+        let petTimer = null;
+        let petStateTimer = null;
+        let petWaveTimer = null;
+        let petBlinking = false;
+        let petDragging = false;
+        let petDragStart = null;
+        let petState = 'idle';
+        const petMotion = { mode: 'wander', x: null, y: null, target: null, speed: 0, lastAt: 0, restUntil: 0, cursor: null };
+        const petDock = $('petDock');
+        const petCharacter = $('petCharacter');
+        const petImage = $('petImage');
+        const petLines = {
+            wave: ['嗨！要不要一起把格式理得漂漂亮亮？', '你好呀，今天也要认真写论文。', '我在这里，随时陪你检查格式！'],
+            feed: ['唔！白米饭真香，谢谢投喂。', '这一碗饭让我元气满满！', '好吃！我会更认真帮你看格式。'],
+            wander: ['开始巡逻啦，发现问题我会提醒你。', '我去走两步，别担心，我不会走远。', '散步模式启动，论文也要劳逸结合哦。'],
+            heart: ['送你一个小小的比心。', '辛苦啦，给你一点写作能量。', '比心！今天的论文会很顺利。'],
+            wake: ['我醒啦，继续陪你。', '早安，我已经恢复元气啦！', '嗯？叫我吗，我在呢。'],
+            tap: ['戳到我啦！', '嘿嘿，我听见啦。', '收到你的信号～']
+        };
+        function petLine(kind) {
+            const lines = petLines[kind] || ['我在这里陪你。'];
+            return lines[Math.floor(Math.random() * lines.length)];
+        }
+
+        function petSay(message, duration = 3000) {
+            const bubble = $('petBubble');
+            const rect = petDock.getBoundingClientRect();
+            // Keep a long sentence on-screen when the draggable pet is parked at the left edge.
+            if (rect.left < 230) { bubble.style.left = '0'; bubble.style.right = 'auto'; }
+            else { bubble.style.left = 'auto'; bubble.style.right = '0'; }
+            bubble.textContent = message;
+            bubble.classList.add('show');
+            clearTimeout(petTimer);
+            petTimer = setTimeout(() => bubble.classList.remove('show'), duration);
+        }
+
+        function petSetState(state = 'idle', message = '', duration = 0) {
+            const labels = { idle:'待机中', reading:'读论文', thinking:'思考中', celebrate:'完成啦', eating:'吃白米饭', waving:'招呼中', heart:'比心中', sleeping:'睡觉中', error:'需要帮忙' };
+            clearTimeout(petStateTimer);
+            clearInterval(petWaveTimer);
+            petBlinking = false;
+            petCharacter.className = `pet-character ${state === 'reading' ? 'thinking' : state}`;
+            petDock.classList.toggle('is-sleeping', state === 'sleeping');
+            petState = state;
+            $('petStatus').textContent = labels[state] || '待机中';
+            if (state === 'thinking' || state === 'reading') petImage.src = petImages.side;
+            else if (state === 'sleeping') petImage.src = petImages.sleep;
+            else if (state === 'eating') petImage.src = petImages.rice;
+            else if (state === 'heart') petImage.src = petImages.heart;
+            else if (state === 'waving' || state === 'celebrate') {
+                let alternate = false;
+                petImage.src = petImages.wave;
+                // Two hand positions are alternated, so greeting is a real pose change rather than a shaking sticker.
+                petWaveTimer = setInterval(() => {
+                    if (petState !== state) return;
+                    alternate = !alternate;
+                    petImage.src = alternate ? petImages.wave2 : petImages.wave;
+                }, 260);
+            }
+            else petImage.src = petImages.front;
+            petImage.style.transform = '';
+            if (message) petSay(message, duration || 3200);
+            if (duration) petStateTimer = setTimeout(() => {
+                if (state !== 'sleeping') petSetState('idle');
+            }, duration);
+        }
+
+        function petBlink() {
+            // Briefly pause walking so the deliberately longer closed-eye frame cannot be overwritten by a direction frame.
+            if (petState !== 'idle' || petBlinking || petDock.classList.contains('is-minimized')) return;
+            petBlinking = true;
+            petCharacter.classList.remove('walking');
+            petImage.src = petImages.blink;
+            petImage.style.transform = '';
+            setTimeout(() => {
+                if (petState === 'idle') petImage.src = petImages.front;
+                petBlinking = false;
+            }, 360);
+        }
+
+        function petMove(left, top, save = false) {
+            const maxLeft = Math.max(0, window.innerWidth - 166);
+            const maxTop = Math.max(4, window.innerHeight - 190);
+            petDock.style.left = `${Math.max(0, Math.min(left, maxLeft))}px`;
+            petDock.style.top = `${Math.max(4, Math.min(top, maxTop))}px`;
+            petDock.style.right = 'auto';
+            petDock.style.bottom = 'auto';
+            if (save) localStorage.setItem('paper_pet_position', JSON.stringify({ left: petDock.style.left, top: petDock.style.top }));
+        }
+
+        function petBounds() {
+            return {
+                minX: 6,
+                maxX: Math.max(6, window.innerWidth - 166),
+                minY: 72,
+                maxY: Math.max(72, window.innerHeight - 185)
+            };
+        }
+
+        function petChooseTarget() {
+            const bounds = petBounds();
+            // Keep a little clear space at the centre of the form while still allowing real roaming.
+            const preferEdge = Math.random() < .62;
+            const x = preferEdge && Math.random() < .5
+                ? bounds.minX + Math.random() * Math.min(210, bounds.maxX - bounds.minX)
+                : bounds.maxX - Math.random() * Math.min(250, bounds.maxX - bounds.minX);
+            const y = bounds.minY + Math.random() * (bounds.maxY - bounds.minY);
+            petMotion.target = { x, y };
+        }
+
+        function petFace(dx, dy) {
+            if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+                petImage.src = petImages.side;
+                // side.png is 156px wide versus the front's 178px canvas; compensate to keep one visual size.
+                petImage.style.transform = dx > 0 ? 'scaleX(-1.14)' : 'scaleX(1.14)';
+            } else if (dy < 0) {
+                petImage.src = petImages.back;
+                petImage.style.transform = '';
+            } else {
+                petImage.src = petImages.front;
+                petImage.style.transform = '';
+            }
+        }
+
+        function petMotionFrame(now) {
+            requestAnimationFrame(petMotionFrame);
+            if (petDock.classList.contains('is-minimized')) return;
+            if (petMotion.x === null) {
+                const rect = petDock.getBoundingClientRect();
+                petMotion.x = rect.left;
+                petMotion.y = rect.top;
+            }
+            const dt = Math.min(.05, Math.max(.008, (now - (petMotion.lastAt || now)) / 1000));
+            petMotion.lastAt = now;
+            if (petDragging || petBlinking || petState !== 'idle') {
+                petCharacter.classList.remove('walking');
+                return;
+            }
+
+            if (petMotion.mode === 'follow' && petMotion.cursor) {
+                const dx = petMotion.cursor.x - petMotion.x;
+                const dy = petMotion.cursor.y - petMotion.y;
+                if (Math.hypot(dx, dy) > 115) petMotion.target = { x: petMotion.cursor.x + 15, y: petMotion.cursor.y + 8 };
+                else petMotion.target = null;
+            } else if (petMotion.mode === 'wander' && !petMotion.target && now > petMotion.restUntil) {
+                petChooseTarget();
+            }
+
+            if (!petMotion.target || petMotion.mode === 'still') {
+                petMotion.speed *= .78;
+                petCharacter.classList.remove('walking');
+                return;
+            }
+            const dx = petMotion.target.x - petMotion.x;
+            const dy = petMotion.target.y - petMotion.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance < 9) {
+                petMotion.target = null;
+                petMotion.restUntil = now + 3500 + Math.random() * 8000;
+                petMotion.speed = 0;
+                petCharacter.classList.remove('walking');
+                if (petMotion.mode === 'wander' && Math.random() < .45) {
+                    petSetState(Math.random() < .5 ? 'waving' : 'celebrate', '', 850);
+                }
+                return;
+            }
+            const targetSpeed = petMotion.mode === 'follow' ? 245 : 112;
+            petMotion.speed += (targetSpeed - petMotion.speed) * Math.min(1, dt * 4.2);
+            const step = Math.min(distance, petMotion.speed * dt);
+            petMotion.x += dx / distance * step;
+            petMotion.y += dy / distance * step;
+            const bounds = petBounds();
+            petMotion.x = Math.max(bounds.minX, Math.min(petMotion.x, bounds.maxX));
+            petMotion.y = Math.max(bounds.minY, Math.min(petMotion.y, bounds.maxY));
+            petMove(petMotion.x, petMotion.y);
+            petFace(dx, dy);
+            petCharacter.classList.add('walking');
+        }
+
+        function petHome() {
+            petDock.style.left = '';
+            petDock.style.top = '';
+            petDock.style.right = '';
+            petDock.style.bottom = '';
+            localStorage.removeItem('paper_pet_position');
+            petMotion.x = null;
+            petMotion.y = null;
+            petMotion.target = null;
+            petMotion.mode = 'still';
+            petSetState('celebrate', '回到角落继续陪你啦。', 2300);
+        }
+
+        function petFeed() {
+            $('petMenu').classList.remove('show');
+            const food = document.createElement('span');
+            food.className = 'pet-food';
+            food.textContent = '🍚';
+            petDock.appendChild(food);
+            setTimeout(() => food.remove(), 950);
+            petSetState('eating', petLine('feed'), 2600);
+        }
+
+        function petToggleMenu() {
+            $('petMenu').classList.toggle('show');
+        }
+
+        $('petTrigger').addEventListener('click', event => {
+            event.stopPropagation();
+            if (petDock.classList.contains('is-minimized')) {
+                petDock.classList.remove('is-minimized');
+                $('petTrigger').textContent = '⋯';
+                petSetState('idle', petLine('wake'), 1800);
+            } else {
+                petToggleMenu();
+            }
+        });
+
+        document.querySelectorAll('[data-pet-action]').forEach(button => button.addEventListener('click', () => {
+            const action = button.dataset.petAction;
+            if (action === 'feed') return petFeed();
+            if (action === 'wave') { $('petMenu').classList.remove('show'); return petSetState('waving', petLine('wave'), 2600); }
+            if (action === 'wander') {
+                $('petMenu').classList.remove('show');
+                petMotion.mode = 'wander';
+                petMotion.restUntil = 0;
+                // Force a fresh target now: previously a retained idle timer could leave this mode with no route.
+                const rect = petDock.getBoundingClientRect();
+                petMotion.x = rect.left;
+                petMotion.y = rect.top;
+                petChooseTarget();
+                return petSetState('idle', petLine('wander'), 3000);
+            }
+            if (action === 'heart') { $('petMenu').classList.remove('show'); return petSetState('heart', petLine('heart'), 2200); }
+            if (action === 'follow') {
+                petMotion.mode = petMotion.mode === 'follow' ? 'still' : 'follow';
+                $('petMenu').classList.remove('show');
+                return petSetState('idle', petMotion.mode === 'follow' ? '跟随光标开启，别走太快哦。' : '跟随光标已关闭。', 3000);
+            }
+            if (action === 'rest') { petMotion.mode = 'still'; $('petMenu').classList.remove('show'); return petSetState('sleeping', '晚安…我躺进小床啦，点我就醒。'); }
+            if (action === 'home') { $('petMenu').classList.remove('show'); return petHome(); }
+            if (action === 'hide') {
+                $('petMenu').classList.remove('show');
+                petDock.classList.add('is-minimized');
+                $('petTrigger').textContent = '🐋';
+            }
+        }));
+
+        petCharacter.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            petCharacter.setPointerCapture(event.pointerId);
+            petDragStart = { x:event.clientX, y:event.clientY, left:petDock.getBoundingClientRect().left, top:petDock.getBoundingClientRect().top };
+            petDragging = false;
+        });
+        petCharacter.addEventListener('pointermove', event => {
+            if (!petDragStart) return;
+            const dx = event.clientX - petDragStart.x;
+            const dy = event.clientY - petDragStart.y;
+            if (Math.abs(dx) + Math.abs(dy) > 6) {
+                petDragging = true;
+                petMotion.mode = 'still';
+                petMotion.target = null;
+                petDock.classList.add('is-dragging');
+                petMove(petDragStart.left + dx, petDragStart.top + dy);
+                petImage.src = petImages.side;
+                petImage.style.transform = 'scaleX(1.14)';
+            }
+        });
+        petCharacter.addEventListener('pointerup', event => {
+            if (!petDragStart) return;
+            petCharacter.releasePointerCapture(event.pointerId);
+            petDock.classList.remove('is-dragging');
+            const dragged = petDragging;
+            petDragStart = null;
+            if (dragged) {
+                petMove(petDock.getBoundingClientRect().left, petDock.getBoundingClientRect().top, true);
+                petMotion.x = petDock.getBoundingClientRect().left;
+                petMotion.y = petDock.getBoundingClientRect().top;
+                petSetState('idle', '新位置记住啦。', 1800);
+            } else {
+                petSetState('celebrate', petLine('tap'), 1500);
+            }
+        });
+        petCharacter.addEventListener('dblclick', event => { event.preventDefault(); petFeed(); });
+        petCharacter.addEventListener('contextmenu', event => { event.preventDefault(); $('petMenu').classList.add('show'); });
+        petCharacter.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); petSetState('celebrate', petLine('tap'), 1500); } });
+
+        document.addEventListener('pointermove', event => { petMotion.cursor = { x:event.clientX, y:event.clientY }; });
+        document.addEventListener('click', event => {
+            if (!petDock.contains(event.target)) $('petMenu').classList.remove('show');
+        });
+        try {
+            const savedPosition = JSON.parse(localStorage.getItem('paper_pet_position'));
+            if (savedPosition && savedPosition.left && savedPosition.top) {
+                petMotion.x = parseFloat(savedPosition.left);
+                petMotion.y = parseFloat(savedPosition.top);
+                petMove(petMotion.x, petMotion.y);
+            }
+        } catch (_) { /* Ignore malformed local preference. */ }
+        requestAnimationFrame(petMotionFrame);
+        // Natural, irregular blinks while idling. Action states use their own face/pose frames.
+        setInterval(petBlink, 3000);
+
+        // 初始化
+        loadTemplates();
+        loadSettings();
+    </script>
+</body>
+</html>

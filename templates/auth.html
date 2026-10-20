@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ '注册账号' if mode == 'register' else '登录' }}｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body class="auth-body">
+    <main class="auth-card">
+        <div class="auth-mark" aria-hidden="true">✓</div>
+        <div class="page-eyebrow">PAPER FORMAT CHECKER</div>
+        <h1>{{ '创建本地账号' if mode == 'register' else '欢迎回来' }}</h1>
+        <p class="page-lead">{{ '使用邮箱作为登录名，文档与报告将只对你的账号开放。' if mode == 'register' else '登录后继续检查文档，并查看自己的修复记录。' }}</p>
+        {% if error %}<div class="auth-error" role="alert">{{ error }}</div>{% endif %}
+        <form action="{{ url_for(mode) }}" method="post" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="email">邮箱</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="{{ request.form.get('email', '') }}">
+            <label for="password">密码</label>
+            <input id="password" name="password" type="password" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" minlength="{{ 10 if mode == 'register' else 1 }}" maxlength="128" required>
+            {% if mode == 'register' %}<p class="auth-hint">至少 10 个字符。当前为本地注册，不发送验证邮件，也暂不支持邮箱找回密码。</p>{% endif %}
+            <button class="page-action auth-submit" type="submit">{{ '注册并进入系统' if mode == 'register' else '登录系统' }}</button>
+        </form>
+        <p class="auth-switch">{% if mode == 'register' %}已有账号？<a href="{{ url_for('login') }}">去登录</a>{% else %}还没有账号？<a href="{{ url_for('register') }}">使用邮箱注册</a>{% endif %}</p>
+        <p class="auth-privacy">本机保存账号信息；密码以不可逆哈希存储。请勿将此本地测试版直接公开到互联网。</p>
+        <button class="theme-toggle" type="button" data-theme-toggle>🌙 夜间模式</button>
+    </main>
+    <script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+</body>
+</html>

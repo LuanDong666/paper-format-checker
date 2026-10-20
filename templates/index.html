@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>论文/作业格式检查与修复系统</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -465,6 +467,7 @@
         @keyframes petBubbleIn { from { opacity:0; transform:translateY(5px) scale(.97); } to { opacity:1; transform:none; } }
         @media (max-width:720px) { .pet-dock { right:9px; bottom:10px; transform:scale(.82); transform-origin:bottom right; } .pet-dock.is-sleeping { transform:scale(.68); } .pet-menu { width:210px; } }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
 </head>
 <body>
     <div class="container">
@@ -478,6 +481,8 @@
             </div>
             <div class="local-badge">本地处理 · 文档不外传</div>
         </header>
+
+        {% include '_navigation.html' %}
 
         <div class="main-card">
             <div class="tabs">
@@ -780,6 +785,7 @@
         let fontOptions = null;
         let lastReportUrl = '';
         let lastIssuesCount = 0;
+        const csrfHeaders = { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content };
 
         // DOM
         const $ = id => document.getElementById(id);
@@ -970,7 +976,7 @@
             try {
                 const resp = await fetch('/api/parse-requirements', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...csrfHeaders },
                     body: JSON.stringify({ text })
                 });
                 const data = await resp.json();
@@ -1184,7 +1190,7 @@
             if (custom) formData.append('custom_config', JSON.stringify(custom));
 
             try {
-                const resp = await fetch('/api/check', { method: 'POST', body: formData });
+                const resp = await fetch('/api/check', { method: 'POST', headers: csrfHeaders, body: formData });
                 const data = await resp.json();
                 if (data.success) {
                     lastIssuesCount = data.summary.total_issues;
@@ -1224,7 +1230,7 @@
             if (custom) formData.append('custom_config', JSON.stringify(custom));
 
             try {
-                const resp = await fetch('/api/fix', { method: 'POST', body: formData });
+                const resp = await fetch('/api/fix', { method: 'POST', headers: csrfHeaders, body: formData });
                 const data = await resp.json();
                 if (data.success) {
                     showFixResult(data);
@@ -1257,7 +1263,7 @@
             if (data.fix_stats && Object.keys(data.fix_stats).length > 0) {
                 html += '<div style="font-size:13px;color:#555;margin-bottom:8px;">修改分类：</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
                 for (const [cat, count] of Object.entries(data.fix_stats)) {
-                    html += `<span style="background:white;padding:3px 10px;border-radius:12px;font-size:12px;">${cat}: ${count}处</span>`;
+                    html += `<span style="background:white;padding:3px 10px;border-radius:12px;font-size:12px;">${escapeHtml(cat)}: ${Number(count) || 0}处</span>`;
                 }
                 html += '</div>';
             }
@@ -1275,15 +1281,16 @@
                         </tr></thead><tbody>`;
                 data.fix_records.slice(0, 100).forEach(r => {
                     html += `<tr style="border-bottom:1px solid #f0f0f0;">
-                        <td style="padding:5px;">${r.location}</td>
-                        <td style="padding:5px;">${r.item}</td>
-                        <td style="padding:5px;color:#e74c3c;">${r.old_value}</td>
-                        <td style="padding:5px;color:#27ae60;">${r.new_value}</td>
+                        <td style="padding:5px;">${escapeHtml(r.location)}</td>
+                        <td style="padding:5px;">${escapeHtml(r.item)}</td>
+                        <td style="padding:5px;color:#e74c3c;">${escapeHtml(r.old_value)}</td>
+                        <td style="padding:5px;color:#27ae60;">${escapeHtml(r.new_value)}</td>
                     </tr>`;
                 });
                 html += '</tbody></table></div></details>';
             }
             html += '</div>';
+            if (data.comparison_url) html += `<a class="link-btn comparison-open" href="${escapeHtml(data.comparison_url)}" target="_blank" rel="noopener">打开完整修复前后对照 →</a>`;
             // 插入到结果区域
             const resultSection = $('resultSection');
             const fixDiv = document.createElement('div');
@@ -1307,12 +1314,12 @@
             $('issueList').innerHTML = issues.map((i, idx) => `
                 <div class="issue-item">
                     <div class="issue-header">
-                        <span class="badge ${i.severity}">${severityLabel[i.severity]}</span>
+                        <span class="badge ${['error','warning','info'].includes(i.severity) ? i.severity : 'info'}">${severityLabel[i.severity] || '建议'}</span>
                         ${i.fixable ? '<span class="badge fixable">可修复</span>' : ''}
-                        <span class="issue-loc">${i.location} · ${i.category}</span>
+                        <span class="issue-loc">${escapeHtml(i.location)} · ${escapeHtml(i.category)}</span>
                     </div>
-                    <div class="issue-desc">${i.description}</div>
-                    <div class="issue-sug">💡 ${i.suggestion}</div>
+                    <div class="issue-desc">${escapeHtml(i.description)}</div>
+                    <div class="issue-sug">💡 ${escapeHtml(i.suggestion)}</div>
                 </div>
             `).join('');
         }
@@ -1330,7 +1337,7 @@
             try {
                 const resp = await fetch('/api/polish', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...csrfHeaders },
                     body: JSON.stringify({
                         api_key: apiKey,
                         api_base: $('apiBase').value.trim(),
@@ -1385,6 +1392,11 @@
         }
 
         // 工具函数
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
         function formatSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
@@ -1699,14 +1711,21 @@
         document.addEventListener('click', event => {
             if (!petDock.contains(event.target)) $('petMenu').classList.remove('show');
         });
-        try {
-            const savedPosition = JSON.parse(localStorage.getItem('paper_pet_position'));
-            if (savedPosition && savedPosition.left && savedPosition.top) {
-                petMotion.x = parseFloat(savedPosition.left);
-                petMotion.y = parseFloat(savedPosition.top);
-                petMove(petMotion.x, petMotion.y);
-            }
-        } catch (_) { /* Ignore malformed local preference. */ }
+        if (window.matchMedia('(max-width: 720px)').matches) {
+            // A saved desktop position can cover the entire mobile workflow.
+            petMotion.mode = 'still';
+            petDock.classList.add('is-minimized');
+            $('petTrigger').textContent = '🐋';
+        } else {
+            try {
+                const savedPosition = JSON.parse(localStorage.getItem('paper_pet_position'));
+                if (savedPosition && savedPosition.left && savedPosition.top) {
+                    petMotion.x = parseFloat(savedPosition.left);
+                    petMotion.y = parseFloat(savedPosition.top);
+                    petMove(petMotion.x, petMotion.y);
+                }
+            } catch (_) { /* Ignore malformed local preference. */ }
+        }
         requestAnimationFrame(petMotionFrame);
         // Natural, irregular blinks while idling. Action states use their own face/pose frames.
         setInterval(petBlink, 3000);
@@ -1715,5 +1734,6 @@
         loadTemplates();
         loadSettings();
     </script>
+    <script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
 </body>
 </html>

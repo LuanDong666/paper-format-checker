@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的资料｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body class="shell-body">
+<div class="container">
+    <header class="header shell-header"><div class="brand"><div class="brand-mark" aria-hidden="true">✓</div><div><h1>论文格式检查工作台</h1><p>我的资料 · 给工作台一个自己的样子</p></div></div><span class="local-badge">账号独立</span></header>
+    {% include '_navigation.html' %}
+    <main class="page-panel profile-panel">
+        <div class="page-eyebrow">MY PROFILE</div>
+        <h1 class="page-title">我的资料</h1>
+        <p class="page-lead">昵称与头像只用于当前系统的界面展示，不会写入论文，也不会发送到外部网站。</p>
+        {% if error %}<div class="auth-error" role="alert">{{ error }}</div>{% endif %}
+        {% if saved %}<div class="profile-saved" role="status">资料已保存。</div>{% endif %}
+        <form method="post" action="{{ url_for('profile') }}" class="profile-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="profile-field"><label for="display-name">显示名称</label><input id="display-name" name="display_name" type="text" required minlength="1" maxlength="24" value="{{ request.form.get('display_name', current_user.display_name) }}"><small>1～24 个字符。登录邮箱不会改变。</small></div>
+            <fieldset class="avatar-picker"><legend>选择头像</legend><div class="avatar-options">{% for key, item in avatars.items() %}<label class="avatar-choice"><input type="radio" name="avatar" value="{{ key }}" {% if request.form.get('avatar', current_user.avatar) == key %}checked{% endif %}><span class="avatar-tile avatar-{{ key }}"><span class="avatar-emoji" aria-hidden="true">{% if key == 'whale' %}<img src="{{ url_for('static', filename='pet/front.png') }}" alt="">{% else %}{{ item.symbol }}{% endif %}</span><span>{{ item.label }}</span></span></label>{% endfor %}</div></fieldset>
+            <div class="profile-email"><span>登录邮箱</span><strong>{{ current_user.email }}</strong></div>
+            <button class="page-action profile-save" type="submit">保存资料</button>
+        </form>
+        <div class="page-actions"><a class="page-action secondary" href="{{ url_for('history') }}">查看我的历史 →</a></div>
+    </main>
+</div>
+<script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+</body>
+</html>

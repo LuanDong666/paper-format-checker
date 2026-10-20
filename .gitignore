@@ -1,10 +1,12 @@
 __pycache__/
 .venv/
 data/
-outputs/
 .test-data/
 *.py[cod]
 .local-browser-profile/
 .source-dafeiyu/
+outputs/
 .public-export/
+.public-verify/
+github-published.png
 交接文档_README.md

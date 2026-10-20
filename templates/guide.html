@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>格式指南｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <style>
+        * { box-sizing:border-box; }
+        body { margin:0; padding:32px 20px 56px; font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif; background:#f4f8fb; }
+        .container { max-width:1120px; margin:0 auto; }
+        .header { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-bottom:24px; }
+        .brand { display:flex; align-items:center; gap:14px; }
+        .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:14px; background:linear-gradient(135deg,#1769e0,#57a8f4); box-shadow:0 10px 22px rgba(23,105,224,.24); color:white; font-size:23px; }
+        .header h1 { margin:0; color:var(--ink,#18324f); font-size:clamp(23px,3vw,30px); }
+        .header p { margin:5px 0 0; color:var(--muted,#61728a); font-size:14px; }
+        .local-badge { padding:8px 12px; border-radius:999px; background:#f1fbf9; color:#08796f; font-size:12px; font-weight:700; }
+        @media (max-width:720px) { body { padding:18px 12px 32px; } .header { align-items:flex-start; flex-direction:column; gap:14px; } }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="brand"><div class="brand-mark" aria-hidden="true">✓</div><div><h1>论文格式检查工作台</h1><p>格式指南 · 看懂规则之后再检查</p></div></div>
+        <div class="local-badge">内置规则仅作起点</div>
+    </header>
+    {% include '_navigation.html' %}
+    <main class="page-panel">
+        <div class="page-eyebrow">FORMAT GUIDE</div>
+        <h1 class="page-title">从格式要求到可执行检查</h1>
+        <p class="page-lead">本页说明系统能检查什么、模板如何选，以及自动修复后为什么还要人工复核。学校或老师发布的格式文件始终优先于这里的内置模板。</p>
+
+        <section class="page-section" aria-labelledby="guide-steps">
+            <h2 id="guide-steps">使用流程</h2>
+            <div class="info-grid">
+                <article class="info-card"><h3>1 选规范</h3><p>先选通用论文、本科论文、课程作业或期刊格式。若有老师的具体要求，可在工作台粘贴说明并核对提取出的参数。</p></article>
+                <article class="info-card"><h3>2 查差异</h3><p>上传 DOCX，系统按所选规则检查页面、正文、标题、参考文献和部分表格格式，并标出对应位置。</p></article>
+                <article class="info-card"><h3>3 下载副本</h3><p>确认原稿已有备份后，再生成修复副本。原文件不会被覆盖；报告中不可自动修复的提示需要自行处理。</p></article>
+            </div>
+        </section>
+
+        <section class="page-section" aria-labelledby="guide-templates">
+            <h2 id="guide-templates">内置模板速览</h2>
+            <div class="guide-table-wrap"><table class="guide-table">
+                <thead><tr><th>模板</th><th>正文</th><th>行距</th><th>一级标题</th><th>适用情形</th></tr></thead>
+                <tbody>
+                {% for key in ('general', 'thesis', 'homework', 'journal') %}
+                {% set item = templates[key] %}
+                <tr><td>{{ item.name }}</td><td>{{ item.body_font }} {{ item.body_size }} pt</td><td>{{ item.body_line_spacing }} 倍</td><td>{{ item.h1_font }} {{ item.h1_size }} pt</td><td>{{ item.description }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            <p class="external-note" style="margin-top:10px;">表格只展示主要参数。页边距、对齐、缩进、英文/数字字体及二级标题等参数可在工作台高级设置中查看和调整。</p>
+        </section>
+
+        <section class="page-section" aria-labelledby="guide-limits">
+            <h2 id="guide-limits">检查范围与人工复核</h2>
+            <ul class="page-list">
+                <li>系统适合定位可从 DOCX 结构稳定读取的字体、字号、行距、缩进、页边距和标题对齐差异。</li>
+                <li>目录页码、公式、文本框、脚注、页眉页脚、复杂表格以及学校专用封面可能无法可靠识别。</li>
+                <li>格式正确不代表内容合格，也不等于查重通过；提交前请按学校要求核对引用、图表和最终打印版式。</li>
+            </ul>
+            <div class="page-callout"><strong>隐私提示：</strong>格式检查在当前运行本系统的电脑上处理文件。若通过局域网访问，该电脑会在任务目录暂存上传文件和报告；默认保留 24 小时，并在后续上传时清理过期任务。</div>
+        </section>
+        <div class="page-actions"><a class="page-action" href="{{ url_for('index') }}">开始格式检查 →</a><a class="page-action secondary" href="{{ url_for('similarity') }}">查看查重资源</a></div>
+    </main>
+</div>
+<script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+</body>
+</html>

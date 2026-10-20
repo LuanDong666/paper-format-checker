@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复前后对照｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body class="shell-body">
+    <div class="container">
+        <header class="header shell-header"><div class="brand"><div class="brand-mark" aria-hidden="true">✓</div><div><h1>论文格式检查工作台</h1><p>修复前后对照 · 逐项确认</p></div></div><span class="local-badge">仅当前账号可查看</span></header>
+        {% include '_navigation.html' %}
+        <main class="page-panel comparison-panel">
+            <div class="page-eyebrow">CHANGE REVIEW</div>
+            <h1 class="page-title">修复前后对照</h1>
+            <p class="page-lead">{{ data.filename }} · {{ data.template_name }}。下方“修改记录”列出系统实际改动；剩余问题仍需人工确认。原稿没有被覆盖。</p>
+            <div class="comparison-summary" aria-label="修复概况">
+                <div><strong>{{ data.before_count }}</strong><span>修复前问题</span></div>
+                <div><strong>{{ data.fix_records|length }}</strong><span>实际修改</span></div>
+                <div><strong>{{ data.after_count }}</strong><span>修复后剩余</span></div>
+            </div>
+            <div class="page-actions"><a class="page-action" href="{{ url_for('download_file', job_id=job_id) }}">下载修复副本</a><a class="page-action secondary" href="{{ url_for('index') }}">返回工作台</a></div>
+            <section class="page-section" aria-labelledby="changed-title">
+                <h2 id="changed-title">实际修改 <small>（{{ data.fix_records|length }} 项）</small></h2>
+                {% if data.fix_records %}
+                <div class="comparison-tools"><label for="change-search">搜索位置或修改项</label><input id="change-search" type="search" placeholder="例如：第 3 段、字号"><label for="change-category">分类</label><select id="change-category"><option value="">全部分类</option>{% for category in data.fix_records|map(attribute='category')|unique %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select><span id="change-count" aria-live="polite"></span></div>
+                <div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>位置</th><th>修改项</th><th>修改前</th><th>修改后</th></tr></thead><tbody>{% for record in data.fix_records %}<tr data-category="{{ record.category }}"><td><span class="comparison-category">{{ record.category }}</span><br>{{ record.location }}</td><td>{{ record.item }}</td><td class="comparison-old">{{ record.old_value }}</td><td class="comparison-new">{{ record.new_value }}</td></tr>{% endfor %}</tbody></table></div>
+                {% else %}<div class="page-callout">没有可自动修复的项目；请查看下方仍需人工确认的问题。</div>{% endif %}
+            </section>
+            <section class="page-section" aria-labelledby="remaining-title"><h2 id="remaining-title">仍需人工确认 <small>（{{ data.after_count }} 项）</small></h2>{% if data.remaining_issues %}<div class="remaining-list">{% for issue in data.remaining_issues %}<article class="remaining-item"><strong>{{ issue.category }} · {{ issue.location }}</strong><p>{{ issue.description }}</p><small>建议：{{ issue.suggestion }}</small></article>{% endfor %}</div>{% else %}<div class="page-callout">自动规则未发现剩余问题。目录、公式、分页与学校特定要求仍请在 Word 中人工检查。</div>{% endif %}</section>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+    <script>const search=document.getElementById('change-search'), category=document.getElementById('change-category'), count=document.getElementById('change-count'); if(search&&category){const rows=[...document.querySelectorAll('.comparison-table tbody tr')]; const filter=()=>{let shown=0; for(const row of rows){const visible=(!category.value||row.dataset.category===category.value)&&row.textContent.toLowerCase().includes(search.value.trim().toLowerCase()); row.hidden=!visible; if(visible)shown++;} count.textContent=`显示 ${shown} / ${rows.length} 项`;}; search.addEventListener('input',filter); category.addEventListener('change',filter); filter();}</script>
+</body>
+</html>

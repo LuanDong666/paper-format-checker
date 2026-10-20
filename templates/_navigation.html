@@ -1,0 +1,10 @@
+<nav class="site-nav" aria-label="主导航">
+    <div class="site-nav-links">
+        <a href="{{ url_for('index') }}" class="site-nav-link{% if active_page == 'checker' %} is-active{% endif %}"{% if active_page == 'checker' %} aria-current="page"{% endif %}>格式检查</a>
+        <a href="{{ url_for('guide') }}" class="site-nav-link{% if active_page == 'guide' %} is-active{% endif %}"{% if active_page == 'guide' %} aria-current="page"{% endif %}>格式指南</a>
+        <a href="{{ url_for('similarity') }}" class="site-nav-link{% if active_page == 'similarity' %} is-active{% endif %}"{% if active_page == 'similarity' %} aria-current="page"{% endif %}>查重资源</a>
+        <a href="{{ url_for('history') }}" class="site-nav-link{% if active_page == 'history' %} is-active{% endif %}"{% if active_page == 'history' %} aria-current="page"{% endif %}>我的历史</a>
+    </div>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换夜间模式">🌙 夜间模式</button>
+    {% if current_user %}<div class="account-menu"><a class="account-profile{% if active_page == 'profile' %} is-active{% endif %}" href="{{ url_for('profile') }}" title="我的资料：{{ current_user.email }}"><span class="account-avatar avatar-{{ current_user.avatar }}" aria-hidden="true">{% if current_user.avatar == 'whale' %}<img src="{{ url_for('static', filename='pet/front.png') }}" alt="">{% else %}{{ avatar_options[current_user.avatar].symbol if current_user.avatar in avatar_options else '🐋' }}{% endif %}</span><span class="account-name">{{ current_user.display_name }}</span></a><form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="account-logout" type="submit">退出</button></form></div>{% endif %}
+</nav>

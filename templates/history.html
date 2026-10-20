@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的历史｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body class="shell-body">
+<div class="container">
+    <header class="header shell-header"><div class="brand"><div class="brand-mark" aria-hidden="true">✓</div><div><h1>论文格式检查工作台</h1><p>我的历史 · 每次修改都有迹可循</p></div></div><span class="local-badge">仅自己可见</span></header>
+    {% include '_navigation.html' %}
+    <main class="page-panel history-panel">
+        <div class="page-eyebrow">MY HISTORY</div>
+        <h1 class="page-title">我的历史记录</h1>
+        <p class="page-lead">仅显示当前登录账号的任务。检查报告和修复文件默认保留 24 小时，之后清理；操作摘要会继续保留，直到你手动删除。</p>
+        {% if jobs %}
+        <div class="history-list">{% for job in jobs %}<article class="history-card">
+            <div class="history-main"><div class="history-icon" aria-hidden="true">{{ '🔧' if job.action == 'fix' else '🔍' }}</div><div><span class="history-kind">{{ '修复文档' if job.action == 'fix' else '检查文档' }}</span><h2>{{ job.filename }}</h2><p>{{ job.created_at }} · {{ job.template_name }}</p></div></div>
+            <div class="history-stats"><span>修复前问题 <strong>{{ job.before_count }}</strong></span>{% if job.action == 'fix' %}<span>已修改 <strong>{{ job.fix_count }}</strong></span><span>修复后剩余 <strong>{{ job.after_count }}</strong></span>{% endif %}</div>
+            <div class="history-actions">{% if job.available %}{% if job.action == 'fix' %}<a class="page-action secondary" href="{{ url_for('comparison', job_id=job.job_id) }}">查看对照</a><a class="page-action" href="{{ url_for('download_file', job_id=job.job_id) }}">下载副本</a>{% else %}<a class="page-action secondary" href="{{ url_for('view_report', job_id=job.job_id) }}">查看报告</a>{% endif %}{% else %}<span class="history-expired">文件已到期清理 · 摘要仍保留</span>{% endif %}<form method="post" action="{{ url_for('delete_history', job_id=job.job_id) }}" data-confirm-delete><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="history-delete">删除记录</button></form></div>
+        </article>{% endfor %}</div>
+        {% else %}<div class="history-empty"><div aria-hidden="true">📂</div><h2>还没有检查记录</h2><p>上传一份 DOCX 并完成检查后，记录会出现在这里。</p><a class="page-action" href="{{ url_for('index') }}">开始检查</a></div>{% endif %}
+    </main>
+</div>
+<script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+<script>document.querySelectorAll('[data-confirm-delete]').forEach(form => form.addEventListener('submit', event => { if (!window.confirm('删除这条记录及仍保留的相关文件？此操作无法撤销。')) event.preventDefault(); }));</script>
+</body>
+</html>

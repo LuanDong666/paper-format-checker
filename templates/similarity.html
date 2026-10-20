@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查重资源｜论文格式检查工作台</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('paper_theme') || 'light'; } catch (_) { document.documentElement.dataset.theme = 'light'; }</script>
+    <style>
+        * { box-sizing:border-box; }
+        body { margin:0; padding:32px 20px 56px; font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif; background:#f4f8fb; }
+        .container { max-width:1120px; margin:0 auto; }
+        .header { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-bottom:24px; }
+        .brand { display:flex; align-items:center; gap:14px; }
+        .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:14px; background:linear-gradient(135deg,#1769e0,#57a8f4); box-shadow:0 10px 22px rgba(23,105,224,.24); color:white; font-size:23px; }
+        .header h1 { margin:0; color:var(--ink,#18324f); font-size:clamp(23px,3vw,30px); }
+        .header p { margin:5px 0 0; color:var(--muted,#61728a); font-size:14px; }
+        .local-badge { padding:8px 12px; border-radius:999px; background:#f1fbf9; color:#08796f; font-size:12px; font-weight:700; }
+        @media (max-width:720px) { body { padding:18px 12px 32px; } .header { align-items:flex-start; flex-direction:column; gap:14px; } }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css') }}">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="brand"><div class="brand-mark" aria-hidden="true">✓</div><div><h1>论文格式检查工作台</h1><p>查重资源 · 仅提供平台入口</p></div></div>
+        <div class="local-badge">外部服务请自行确认</div>
+    </header>
+    {% include '_navigation.html' %}
+    <main class="page-panel">
+        <div class="page-eyebrow">SIMILARITY RESOURCES</div>
+        <h1 class="page-title">常用论文相似度检测平台</h1>
+        <p class="page-lead">这里汇集平台的公开入口，方便你按学校要求选择。本站不提供查重算法、不生成相似度百分比，也不会将已上传的论文自动发送给下列网站。</p>
+
+        <section class="page-section" aria-labelledby="platforms">
+            <h2 id="platforms">平台入口</h2>
+            <div class="resource-grid">
+                <article class="resource-card">
+                    <div><h3>中国知网个人查重</h3><p>个人用户入口。学校统一检测可能使用不同的机构入口；最终要求请以学校通知为准。</p></div>
+                    <a class="resource-link" href="https://cx.cnki.net/" target="_blank" rel="noopener noreferrer">打开知网官网 ↗</a>
+                    <div class="external-note">域名：cx.cnki.net</div>
+                </article>
+                <article class="resource-card">
+                    <div><h3>万方检测</h3><p>万方数据文献相似性检测服务。检测版本、收费和报告形式由平台页面说明。</p></div>
+                    <a class="resource-link" href="https://check.wanfangdata.com.cn/" target="_blank" rel="noopener noreferrer">打开万方官网 ↗</a>
+                    <div class="external-note">域名：check.wanfangdata.com.cn</div>
+                </article>
+                <article class="resource-card">
+                    <div><h3>大雅相似度分析</h3><p>提供个人与机构服务入口。机构账号及使用权限可能需要通过学校图书馆获取。</p></div>
+                    <a class="resource-link" href="https://dsa.dayainfo.com/" target="_blank" rel="noopener noreferrer">打开大雅官网 ↗</a>
+                    <div class="external-note">域名：dsa.dayainfo.com</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="page-section" aria-labelledby="before-upload">
+            <h2 id="before-upload">提交前请确认</h2>
+            <ul class="page-list">
+                <li>优先使用学校指定的入口和版本；不同平台的数据库与规则不同，结果不能直接互相替代。</li>
+                <li>检查地址栏域名、账号权限、价格与隐私条款，避免在仿冒站点上传未公开论文。</li>
+                <li>查重报告属于外部平台服务；本站只负责格式检查与可修复项目，不保存或读取外部查重结果。</li>
+            </ul>
+            <div class="page-callout"><strong>数据边界：</strong>点击链接只会在新标签页打开相应网站。若决定上传论文，你需要在该平台自行操作并接受其条款；本站不会代你提交。</div>
+        </section>
+        <section class="page-section" aria-labelledby="submission-resource">
+            <h2 id="submission-resource">投稿信息补充</h2>
+            <div class="resource-grid">
+                <article class="resource-card">
+                    <div><h3>万维书刊网</h3><p>提供期刊目录、投稿入口和投稿经验等信息；它不是本页所列的论文相似度检测平台。投稿前仍需到期刊官网核实投稿地址。</p></div>
+                    <a class="resource-link" href="https://www.eshukan.com/" target="_blank" rel="noopener noreferrer">打开万维书刊网 ↗</a>
+                    <div class="external-note">域名：www.eshukan.com · 投稿信息资源，非查重结果</div>
+                </article>
+                <article class="resource-card">
+                    <div><h3>国家科技期刊平台</h3><p>由国家科技文献服务体系提供科技期刊导航，可按领域了解期刊信息；投稿仍应通过目标期刊官方渠道。</p></div>
+                    <a class="resource-link" href="https://opaj.napstic.cn/periodicals" target="_blank" rel="noopener noreferrer">打开期刊平台 ↗</a>
+                    <div class="external-note">域名：opaj.napstic.cn · 期刊导航，非代投服务</div>
+                </article>
+                <article class="resource-card">
+                    <div><h3>LetPub 期刊查询</h3><p>提供 SCI 期刊检索与投稿经验参考；社区经验可能变化，具体要求、费用和投稿入口请以期刊官网为准。</p></div>
+                    <a class="resource-link" href="https://www.letpub.com.cn/index.php?page=journalapp" target="_blank" rel="noopener noreferrer">打开 LetPub ↗</a>
+                    <div class="external-note">域名：www.letpub.com.cn · 期刊信息参考，非官方投稿系统</div>
+                </article>
+            </div>
+        </section>
+        <div class="page-actions"><a class="page-action" href="{{ url_for('index') }}">返回格式检查 →</a><a class="page-action secondary" href="{{ url_for('guide') }}">阅读格式指南</a></div>
+    </main>
+</div>
+<script src="{{ url_for('static', filename='site-shell.js') }}" defer></script>
+</body>
+</html>

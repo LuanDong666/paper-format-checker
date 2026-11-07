@@ -5,8 +5,28 @@ cd /d "%~dp0"
 
 set "PYTHON=%~dp0.venv\Scripts\python.exe"
 if not exist "%PYTHON%" (
-    echo ERROR: Project Python environment was not found.
-    echo Run the setup commands in README.md first.
+    echo Creating a project Python environment...
+    where py >nul 2>&1
+    if not errorlevel 1 (
+        py -3 -m venv "%~dp0.venv"
+    )
+    if not exist "%PYTHON%" (
+        where python >nul 2>&1
+        if errorlevel 1 (
+            echo ERROR: Python 3.10 or newer is required. Install it, then run this file again.
+            goto :end
+        )
+        python -m venv "%~dp0.venv"
+    )
+    if not exist "%PYTHON%" (
+        echo ERROR: Could not create the Python environment.
+        goto :end
+    )
+)
+
+"%PYTHON%" -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Python 3.10 or newer is required.
     goto :end
 )
 

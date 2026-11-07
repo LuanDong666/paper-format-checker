@@ -13,14 +13,20 @@ Windows 用户先安装 Python 3.10 或更高版本，再双击 `启动系统.ba
 
 如浏览器被单位设备策略限制，可使用 `启动桌面备用.bat` 打开本地备用界面；该模式不替代浏览器版。
 
-如需手动安装，在本项目目录执行：
+如需手动安装，Windows PowerShell 在本项目目录执行。直接调用虚拟环境中的 Python，不需要修改 PowerShell 的脚本执行策略：
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python app.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
+```
+
+macOS 或 Linux 使用对应的虚拟环境路径：
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python app.py
 ```
 
 浏览器访问 <http://127.0.0.1:5000>。默认只允许本机访问；如确实需要局域网演示，可在启动前设置 `PAPER_CHECKER_HOST=0.0.0.0`，并仅在可信网络使用。

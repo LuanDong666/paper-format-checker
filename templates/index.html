@@ -1326,36 +1326,7 @@
 
         // AI润色
         async function doPolish() {
-            const text = $('polishInput').value.trim();
-            const apiKey = $('apiKey').value.trim();
-            if (!text) { showPolishError('请输入需要润色的文本'); return; }
-            if (!apiKey) { showPolishError('请先在「设置」中填写 API Key'); return; }
-
-            $('polishOutput').value = '润色中，请稍候...';
-            hidePolishError();
-
-            try {
-                const resp = await fetch('/api/polish', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...csrfHeaders },
-                    body: JSON.stringify({
-                        api_key: apiKey,
-                        api_base: $('apiBase').value.trim(),
-                        model: $('apiModel').value.trim(),
-                        text: text
-                    })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    $('polishOutput').value = data.polished_text;
-                } else {
-                    $('polishOutput').value = '';
-                    showPolishError(data.error);
-                }
-            } catch(err) {
-                $('polishOutput').value = '';
-                showPolishError('请求失败：' + err.message);
-            }
+            showPolishError('本地版未启用 AI 润色，请勿输入 API Key。');
         }
 
         function copyPolished() {
@@ -1366,29 +1337,26 @@
             }
         }
 
-        // 预留本地偏好设置入口；当前版本不保存 API Key 或调用外部模型。
+        // 本地版不启用模型接口；清理旧版本曾保存的浏览器设置。
         function saveSettings() {
-            localStorage.setItem('paper_api_key', $('apiKey').value);
-            localStorage.setItem('paper_api_base', $('apiBase').value);
-            localStorage.setItem('paper_api_model', $('apiModel').value);
+            loadSettings();
             updateApiStatus();
-            alert('设置已保存到本地');
+            alert('本地版未启用 AI 润色，不会保存 API Key。');
         }
 
         function loadSettings() {
-            return;
+            try {
+                localStorage.removeItem('paper_api_key');
+                localStorage.removeItem('paper_api_base');
+                localStorage.removeItem('paper_api_model');
+            } catch (_) { /* Storage may be disabled by the browser. */ }
         }
 
         function updateApiStatus() {
             const el = $('apiStatus');
             if (!el) return;
-            if ($('apiKey').value.trim()) {
-                el.className = 'api-status ok';
-                el.textContent = '✓ API Key 已配置';
-            } else {
-                el.className = 'api-status no';
-                el.textContent = '✗ 未配置 API Key（润色功能不可用）';
-            }
+            el.className = 'api-status no';
+            el.textContent = '本地版未启用 AI 润色';
         }
 
         // 工具函数

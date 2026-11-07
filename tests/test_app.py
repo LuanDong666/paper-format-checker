@@ -12,7 +12,7 @@ from app import create_app
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-FIXTURE = PROJECT_DIR / "test_document.docx"
+FIXTURE = PROJECT_DIR / "examples" / "演示用_多类型格式错误.docx"
 TEST_DATA = PROJECT_DIR / "data" / ".test-data"
 
 

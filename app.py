@@ -214,17 +214,23 @@ def create_app(test_config=None):
     def load_config():
         template_id = request.form.get("template", "general")
         custom_config = request.form.get("custom_config")
-        if template_id not in FORMAT_TEMPLATES:
+        if template_id not in FORMAT_TEMPLATES and template_id != "custom":
             raise ValueError("未知的格式模板")
         if not custom_config:
+            if template_id == "custom":
+                raise ValueError("请选择自定义格式参数后再检查")
             return template_id, None
         config = json.loads(custom_config)
         if not isinstance(config, dict):
             raise ValueError("自定义配置必须是对象")
+        config.setdefault("description", "使用页面设置的自定义格式参数")
         missing = set(FORMAT_TEMPLATES["general"]) - set(config)
         if missing:
-            raise ValueError("自定义配置缺少必要字段")
+            raise ValueError("自定义配置缺少必要字段：" + "、".join(sorted(missing)))
         return template_id, config
+
+    def template_name(template_id, config):
+        return "自定义" if template_id == "custom" else FORMAT_TEMPLATES[template_id]["name"]
 
     @app.route("/")
     def index():
@@ -326,11 +332,11 @@ def create_app(test_config=None):
             issues, stats = checker.check_file(upload["path"])
             report_data = generate_report(issues, stats, upload["original_name"])
             report_data["template"] = template_id
-            report_data["template_name"] = FORMAT_TEMPLATES[template_id]["name"]
+            report_data["template_name"] = template_name(template_id, config)
             (upload["dir"] / "report.html").write_text(generate_html_report(report_data), encoding="utf-8")
             record_job(db_path, job_id=upload["id"], user_id=g.user["id"],
                        filename=upload["original_name"], action="check",
-                       template_name=FORMAT_TEMPLATES[template_id]["name"],
+                       template_name=template_name(template_id, config),
                        before_count=len(issues))
             return jsonify({"success": True, "job_id": upload["id"], "report": report_data,
                             "summary": checker.get_summary(), "report_url": f"/report/{upload['id']}",
@@ -360,7 +366,7 @@ def create_app(test_config=None):
                 fix_stats[record.category] = fix_stats.get(record.category, 0) + 1
             comparison = {
                 "filename": upload["original_name"],
-                "template_name": FORMAT_TEMPLATES[template_id]["name"],
+                "template_name": template_name(template_id, config),
                 "before_count": len(issues_before),
                 "after_count": len(issues_after),
                 "fix_records": [record.to_dict() for record in fix_records],
@@ -370,7 +376,7 @@ def create_app(test_config=None):
                 json.dumps(comparison, ensure_ascii=False), encoding="utf-8")
             record_job(db_path, job_id=upload["id"], user_id=g.user["id"],
                        filename=upload["original_name"], action="fix",
-                       template_name=FORMAT_TEMPLATES[template_id]["name"],
+                       template_name=template_name(template_id, config),
                        before_count=len(issues_before), after_count=len(issues_after),
                        fix_count=len(fix_records))
             return jsonify({"success": True, "job_id": upload["id"],

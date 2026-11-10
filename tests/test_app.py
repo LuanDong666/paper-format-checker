@@ -2,6 +2,7 @@
 """端到端接口测试：不依赖外网或真实 API Key。"""
 
 import io
+import json
 import os
 import shutil
 import time
@@ -9,6 +10,7 @@ import unittest
 from pathlib import Path
 
 from app import create_app
+from utils.format_checker import FORMAT_TEMPLATES
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -88,6 +90,16 @@ class PaperCheckerApiTests(unittest.TestCase):
         self.assertEqual(report.status_code, 200)
         self.assertIn("格式检查报告", report.get_data(as_text=True))
         report.close()
+
+    def test_custom_template_can_check_and_fix(self):
+        config = dict(FORMAT_TEMPLATES["general"])
+        config.pop("description")  # Older browser pages omit this display-only field.
+        custom_config = json.dumps(config, ensure_ascii=False)
+        checked = self.upload_document("/api/check", template="custom", custom_config=custom_config)
+        self.assertEqual(checked.status_code, 200, checked.get_data(as_text=True))
+        self.assertEqual(checked.get_json()["report"]["template_name"], "自定义")
+        fixed = self.upload_document("/api/fix", template="custom", custom_config=custom_config)
+        self.assertEqual(fixed.status_code, 200, fixed.get_data(as_text=True))
 
     def test_fix_produces_download(self):
         response = self.upload_document("/api/fix", template="general", issues_before="0")
